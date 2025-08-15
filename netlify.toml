@@ -1,0 +1,6 @@
+[build]
+  command = "CI=false yarn build"
+  publish = "build"
+
+[build.environment]
+  CI = "false"

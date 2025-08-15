@@ -61,7 +61,6 @@ const PaymentsBarChart = ({
   // Device breakpoints
   const isMobile = windowWidth < 768;
   const isTablet = windowWidth >= 768 && windowWidth < 1024;
-  const isDesktop = windowWidth >= 1024;
 
   // Colour palette
   const colours = {

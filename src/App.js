@@ -11,7 +11,7 @@ function App() {
   const [mobileColumnVisible, setMobileColumnVisible] = useState(true);
   const [devControlsMinimized, setDevControlsMinimized] = useState(false);
   const [activeChartType, setActiveChartType] = useState('all');
-  const [status, setStatus] = useState({ type: 'ready', text: 'All Charts Loaded' });
+const [status] = useState({ type: 'ready', text: 'All Charts Loaded' });
 
   // Sample data
   const sampleData = {
