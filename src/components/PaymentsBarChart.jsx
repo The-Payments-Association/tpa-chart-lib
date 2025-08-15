@@ -26,6 +26,26 @@ const PaymentsBarChart = ({
   sourceUrl = null,
   notesDescription = null,
 }) => {
+  // Add responsive state
+  const [windowWidth, setWindowWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1200
+  );
+  const [currentPage, setCurrentPage] = useState(0);
+
+  // Responsive event listener
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+      setCurrentPage(0);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Device breakpoints
+  const isMobile = windowWidth < 768;
+  const isTablet = windowWidth >= 768 && windowWidth < 1024;
+
   // Colours
   const colours = {
     primary: "#00dfb8",
@@ -40,7 +60,23 @@ const PaymentsBarChart = ({
     grid: "#f1f5f9",
   };
 
-  // Get bar configurations based on data
+  // Mobile pagination for large datasets
+  const getItemsPerPage = () => {
+    if (isMobile) return data.length <= 3 ? data.length : 3;
+    if (isTablet) return data.length <= 4 ? data.length : 4;
+    return data.length;
+  };
+
+  const getVisibleData = () => {
+    const itemsPerPage = getItemsPerPage();
+    if (itemsPerPage >= data.length) return data;
+    const startIndex = currentPage * itemsPerPage;
+    return data.slice(startIndex, startIndex + itemsPerPage);
+  };
+
+  const getTotalPages = () => Math.ceil(data.length / getItemsPerPage());
+
+  // Get bar configurations based on data with responsive naming
   const getBarConfigs = () => {
     if (!data || data.length === 0) return [];
     
@@ -49,20 +85,45 @@ const PaymentsBarChart = ({
       key !== 'name' && typeof sampleData[key] === 'number'
     );
     
+    // Limit bars on mobile and use shorter names
+    const maxBars = isMobile ? 2 : isTablet ? 3 : 5;
+    
     const barConfigs = [
-      { key: 'volume', name: 'Transaction volume', color: colours.primary },
-      { key: 'value', name: 'Transaction value (£m)', color: colours.secondary },
-      { key: 'count', name: 'Transaction count', color: colours.tertiary },
-      { key: 'users', name: 'Active users', color: colours.quaternary },
-      { key: 'revenue', name: 'Revenue (£m)', color: colours.quinary },
+      { 
+        key: 'volume', 
+        name: isMobile ? 'Volume' : 'Transaction volume', 
+        color: colours.primary 
+      },
+      { 
+        key: 'value', 
+        name: isMobile ? 'Value (£m)' : 'Transaction value (£m)', 
+        color: colours.secondary 
+      },
+      { 
+        key: 'count', 
+        name: isMobile ? 'Count' : 'Transaction count', 
+        color: colours.tertiary 
+      },
+      { 
+        key: 'users', 
+        name: isMobile ? 'Users' : 'Active users', 
+        color: colours.quaternary 
+      },
+      { 
+        key: 'revenue', 
+        name: isMobile ? 'Revenue' : 'Revenue (£m)', 
+        color: colours.quinary 
+      },
     ];
 
-    return barConfigs.filter(config => dataKeys.includes(config.key)).slice(0, 3);
+    return barConfigs.filter(config => dataKeys.includes(config.key)).slice(0, maxBars);
   };
 
   const barConfigs = getBarConfigs();
+  const visibleData = getVisibleData();
+  const totalPages = getTotalPages();
 
-  // Custom tooltip
+  // Custom tooltip with responsive sizing
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return React.createElement('div', {
@@ -70,9 +131,10 @@ const PaymentsBarChart = ({
           backgroundColor: colours.background,
           border: `1px solid ${colours.border}`,
           borderRadius: "8px",
-          padding: "12px",
+          padding: isMobile ? "8px" : "12px",
           boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-          fontSize: "14px",
+          fontSize: isMobile ? "12px" : "14px",
+          minWidth: isMobile ? "120px" : "150px",
           fontFamily: "Arial, sans-serif"
         }
       }, [
@@ -107,7 +169,7 @@ const PaymentsBarChart = ({
             React.createElement('span', {
               key: 'text',
               style: { 
-                fontSize: "13px",
+                fontSize: isMobile ? "11px" : "13px",
                 color: colours.mutedForeground,
               }
             }, `${entry.name}: ${entry.value.toLocaleString()}`)
@@ -122,7 +184,7 @@ const PaymentsBarChart = ({
     style: {
       backgroundColor: colours.background,
       border: `1px solid ${colours.border}`,
-      borderRadius: "12px",
+      borderRadius: isMobile ? "8px" : "12px",
       fontFamily: "Arial, sans-serif",
       overflow: "hidden",
       width: "100%",
@@ -130,62 +192,74 @@ const PaymentsBarChart = ({
     },
     className: className
   }, [
-    // Header
+    // Header with responsive layout
     React.createElement('div', {
       key: 'header',
       style: {
-        padding: "24px",
+        padding: isMobile ? "16px" : "24px",
         display: "flex",
-        alignItems: "center",
+        alignItems: isMobile ? "flex-start" : "center",
         justifyContent: "space-between",
         backgroundColor: "#f9fffe",
-        borderBottom: `1px solid ${colours.border}`
+        borderBottom: `1px solid ${colours.border}`,
+        flexDirection: isMobile ? "column" : "row",
+        gap: isMobile ? "12px" : "16px"
       }
     }, [
-      React.createElement('div', { key: 'title-section' }, [
+      React.createElement('div', { 
+        key: 'title-section',
+        style: { flex: 1, minWidth: 0 }
+      }, [
         title && React.createElement('h3', {
           key: 'title',
           style: {
-            margin: "0 0 4px 0",
-            fontSize: "18px",
+            margin: "0 0 2px 0",
+            fontSize: isMobile ? "16px" : "18px",
             fontWeight: "600",
             color: colours.foreground,
+            lineHeight: "1.25"
           }
         }, title),
         React.createElement('p', {
           key: 'subtitle',
           style: {
             margin: "0",
-            fontSize: "14px",
+            fontSize: isMobile ? "12px" : "14px",
             color: colours.mutedForeground,
           }
-        }, "Payment transaction analysis")
+        }, isMobile ? "Payment analysis" : "Payment transaction analysis")
       ]),
       showLogo && React.createElement('img', {
         key: 'logo',
         src: "https://res.cloudinary.com/dmlmugaye/image/upload/v1754492437/PA_Logo_Black_xlb4mj.svg",
         alt: "The Payments Association",
         style: {
-          height: "40px",
+          height: isMobile ? "30px" : "40px",
           width: "auto",
-          maxWidth: "100%"
+          maxWidth: "100%",
+          flexShrink: 0
         }
       })
     ]),
 
-    // Chart area with actual Recharts
+    // Chart area with responsive settings
     React.createElement('div', {
       key: 'chart',
       style: {
-        padding: "24px",
+        padding: isMobile ? "16px" : "24px",
         backgroundColor: "#f9fffe"
       }
     }, React.createElement(ResponsiveContainer, {
       width: width,
       height: height
     }, React.createElement(RechartsBarChart, {
-      data: data,
-      margin: { top: 40, right: 0, left: 0, bottom: 5 }
+      data: visibleData,
+      margin: { 
+        top: isMobile ? 30 : 40, 
+        right: isMobile ? 0 : 0, 
+        left: isMobile ? 0 : 0, 
+        bottom: 5 
+      }
     }, [
       React.createElement(CartesianGrid, {
         key: 'grid',
@@ -199,26 +273,33 @@ const PaymentsBarChart = ({
         dataKey: "name",
         tick: {
           fill: colours.mutedForeground,
-          fontSize: 12,
+          fontSize: isMobile ? 10 : 12,
           fontFamily: "Arial, sans-serif"
         },
         axisLine: { stroke: colours.border, strokeWidth: 1 },
         tickLine: false,
-        tickMargin: 8
+        tickMargin: 8,
+        interval: 0,
+        angle: isMobile ? -45 : 0,
+        textAnchor: isMobile ? "end" : "middle",
+        height: isMobile ? 60 : 30
       }),
       React.createElement(YAxis, {
         key: 'yaxis',
         tick: {
           fill: colours.mutedForeground,
-          fontSize: 12,
+          fontSize: isMobile ? 10 : 12,
           fontFamily: "Arial, sans-serif"
         },
         axisLine: false,
         tickLine: false,
         tickMargin: 8,
         tickFormatter: (value) => {
-          if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
-          if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
+          if (isMobile) {
+            if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`;
+            if (value >= 1000) return `${(value / 1000).toFixed(1)}K`;
+            return value.toString();
+          }
           return value.toLocaleString();
         }
       }),
@@ -229,12 +310,13 @@ const PaymentsBarChart = ({
       React.createElement(Legend, {
         key: 'legend',
         wrapperStyle: {
-          paddingTop: "20px",
-          fontSize: "13px",
+          paddingTop: isMobile ? "12px" : "20px",
+          fontSize: isMobile ? "11px" : "13px",
           color: colours.mutedForeground,
           fontFamily: "Arial, sans-serif"
         },
-        iconType: "rect"
+        iconType: "rect",
+        layout: isMobile && barConfigs.length > 2 ? "vertical" : "horizontal"
       }),
       ...barConfigs.map((barConfig) => 
         React.createElement(Bar, {
@@ -248,19 +330,76 @@ const PaymentsBarChart = ({
       )
     ]))),
 
-    // Footer
+    // Add pagination controls for mobile
+    totalPages > 1 && React.createElement('div', {
+      key: 'pagination',
+      style: {
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: '12px',
+        padding: '16px 0 8px 0',
+        borderTop: `1px solid ${colours.border}`,
+        marginTop: '16px',
+        backgroundColor: "#f9fffe"
+      }
+    }, [
+      React.createElement('button', {
+        key: 'prev',
+        onClick: () => setCurrentPage(Math.max(0, currentPage - 1)),
+        disabled: currentPage === 0,
+        style: {
+          padding: '6px 12px',
+          fontSize: '12px',
+          border: 'none',
+          borderRadius: '4px',
+          fontFamily: "Arial, sans-serif",
+          backgroundColor: currentPage === 0 ? colours.mutedForeground : colours.primary,
+          color: 'white',
+          cursor: currentPage === 0 ? 'not-allowed' : 'pointer',
+        }
+      }, 'Previous'),
+      React.createElement('span', {
+        key: 'counter',
+        style: {
+          fontSize: '12px',
+          color: colours.mutedForeground,
+          fontFamily: "Arial, sans-serif"
+        }
+      }, `${currentPage + 1} of ${totalPages}`),
+      React.createElement('button', {
+        key: 'next',
+        onClick: () => setCurrentPage(Math.min(totalPages - 1, currentPage + 1)),
+        disabled: currentPage === totalPages - 1,
+        style: {
+          padding: '6px 12px',
+          fontSize: '12px',
+          border: 'none',
+          borderRadius: '4px',
+          fontFamily: "Arial, sans-serif",
+          backgroundColor: currentPage === totalPages - 1 ? colours.mutedForeground : colours.primary,
+          color: 'white',
+          cursor: currentPage === totalPages - 1 ? 'not-allowed' : 'pointer',
+        }
+      }, 'Next')
+    ]),
+
+    // Footer with responsive layout
     React.createElement('div', {
       key: 'footer',
       style: {
-        padding: "16px 24px",
+        padding: isMobile ? "0 16px 16px 16px" : "0 24px 20px 24px",
         borderTop: `1px solid ${colours.border}`,
+        paddingTop: isMobile ? "12px" : "16px",
         backgroundColor: colours.background,
       }
     }, React.createElement('div', {
       style: {
         display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center'
+        flexDirection: isMobile ? 'column' : 'row',
+        gap: isMobile ? '8px' : '16px',
+        alignItems: isMobile ? 'flex-start' : 'center',
+        justifyContent: 'space-between'
       }
     }, [
       sourceUrl ? React.createElement('a', {
@@ -269,21 +408,21 @@ const PaymentsBarChart = ({
         target: "_blank",
         rel: "noopener noreferrer",
         style: {
-          fontSize: "12px",
+          fontSize: isMobile ? "10px" : "12px",
           color: colours.mutedForeground,
           textDecoration: "underline"
         }
       }, `Source: ${sourceText}`) : React.createElement('span', {
         key: 'source',
         style: {
-          fontSize: "12px",
+          fontSize: isMobile ? "10px" : "12px",
           color: colours.mutedForeground,
         }
       }, `Source: ${sourceText}`),
       React.createElement('span', {
         key: 'chart-info',
         style: {
-          fontSize: "12px",
+          fontSize: isMobile ? "10px" : "12px",
           color: colours.mutedForeground,
         }
       }, "Chart: Payments Intelligence")
