@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Test Minified Bar Chart</title>
+    <title>Test Minified Line Chart</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -34,18 +34,23 @@
     </style>
 </head>
 <body>
-    <h1>Minified Bar Chart Test</h1>
+    <h1>Minified Line Chart Test</h1>
     
     <div class="debug-info" id="debug-info">Loading dependencies...</div>
 
     <div class="test-container">
-        <h2>Test 1: Single Bar Chart</h2>
+        <h2>Test 1: Single Line Chart</h2>
         <div id="chart-1" class="chart-container"></div>
     </div>
 
     <div class="test-container">
-        <h2>Test 2: Stacked Bar Chart</h2>
+        <h2>Test 2: Multi-Line Chart</h2>
         <div id="chart-2" class="chart-container"></div>
+    </div>
+
+    <div class="test-container">
+        <h2>Test 3: Large Dataset (Mobile Pagination)</h2>
+        <div id="chart-3" class="chart-container"></div>
     </div>
 
     <!-- Load React 18 -->
@@ -69,8 +74,8 @@
         log('');
     </script>
     
-    <!-- Load your actual minified chart library -->
-    <script src="./dist/bar-payments-charts.min.js"></script>
+    <!-- Load your actual minified line chart library -->
+    <script src="./dist/line-payments-charts.min.js"></script>
     
     <script>
         // Wait a moment for the script to load, then test
@@ -81,7 +86,7 @@
             if (window.PaymentsCharts) {
                 log('PaymentsCharts object keys: ' + Object.keys(window.PaymentsCharts).join(', '));
                 log('PaymentsCharts.render type: ' + typeof window.PaymentsCharts.render);
-                log('PaymentsCharts.renderBarChart type: ' + typeof window.PaymentsCharts.renderBarChart);
+                log('PaymentsCharts.renderLineChart type: ' + typeof window.PaymentsCharts.renderLineChart);
             } else {
                 log('❌ window.PaymentsCharts is not available');
             }
@@ -92,70 +97,132 @@
         }, 500);
 
         function runChartTests() {
-            log('🚀 Starting chart tests...');
+            log('🚀 Starting line chart tests...');
             
             // Test data
-            const singleBarData = [
+            const singleLineData = [
                 { name: "Q1 2024", volume: 145000 },
                 { name: "Q2 2024", volume: 162000 },
                 { name: "Q3 2024", volume: 158000 },
                 { name: "Q4 2024", volume: 171000 }
             ];
 
-            const stackedBarData = [
+            const multiLineData = [
                 { name: "Q1 2024", volume: 145000, value: 32060 },
                 { name: "Q2 2024", volume: 162000, value: 42150 },
                 { name: "Q3 2024", volume: 158000, value: 43320 },
                 { name: "Q4 2024", volume: 171000, value: 46840 }
             ];
 
-            // Test 1: Single bar chart
-            log('📊 Testing single bar chart...');
+            const largeDataset = [
+                { name: "Jan 2024", volume: 145000, value: 32060 },
+                { name: "Feb 2024", volume: 162000, value: 42150 },
+                { name: "Mar 2024", volume: 158000, value: 43320 },
+                { name: "Apr 2024", volume: 171000, value: 46840 },
+                { name: "May 2024", volume: 189000, value: 51200 },
+                { name: "Jun 2024", volume: 203000, value: 56780 },
+                { name: "Jul 2024", volume: 195000, value: 54300 },
+                { name: "Aug 2024", volume: 187000, value: 52100 },
+                { name: "Sep 2024", volume: 201000, value: 58200 },
+                { name: "Oct 2024", volume: 215000, value: 61800 },
+                { name: "Nov 2024", volume: 208000, value: 59400 },
+                { name: "Dec 2024", volume: 225000, value: 65000 }
+            ];
+
+            // Test 1: Single line chart
+            log('📈 Testing single line chart...');
             try {
-                if (window.PaymentsCharts && window.PaymentsCharts.render) {
-                    window.PaymentsCharts.render('chart-1', {
-                        data: singleBarData,
-                        title: 'Single Bar Test Chart',
+                if (window.PaymentsCharts && window.PaymentsCharts.renderLineChart) {
+                    window.PaymentsCharts.renderLineChart('chart-1', {
+                        data: singleLineData,
+                        title: 'Single Line Test Chart',
                         height: 400,
                         sourceText: 'Test data source'
                     });
-                    log('✅ Single bar chart render called successfully');
+                    log('✅ Single line chart render called successfully');
+                } else if (window.PaymentsCharts && window.PaymentsCharts.render) {
+                    // Fallback to generic render method
+                    window.PaymentsCharts.render('chart-1', {
+                        data: singleLineData,
+                        title: 'Single Line Test Chart (fallback)',
+                        height: 400,
+                        sourceText: 'Test data source'
+                    });
+                    log('✅ Single line chart render called successfully (fallback)');
                 } else {
-                    log('❌ PaymentsCharts.render not available');
-                    document.getElementById('chart-1').innerHTML = '<p style="color: red;">PaymentsCharts.render not available</p>';
+                    log('❌ PaymentsCharts.renderLineChart not available');
+                    document.getElementById('chart-1').innerHTML = '<p style="color: red;">PaymentsCharts.renderLineChart not available</p>';
                 }
             } catch (error) {
-                log('💥 Single bar chart error: ' + error.message);
+                log('💥 Single line chart error: ' + error.message);
                 document.getElementById('chart-1').innerHTML = '<p style="color: red;">Error: ' + error.message + '</p>';
             }
 
-            // Test 2: Stacked bar chart
+            // Test 2: Multi-line chart
             setTimeout(() => {
-                log('📊 Testing stacked bar chart...');
+                log('📈 Testing multi-line chart...');
                 try {
-                    if (window.PaymentsCharts && window.PaymentsCharts.render) {
-                        window.PaymentsCharts.render('chart-2', {
-                            data: stackedBarData,
-                            title: 'Stacked Bar Test Chart',
+                    if (window.PaymentsCharts && window.PaymentsCharts.renderLineChart) {
+                        window.PaymentsCharts.renderLineChart('chart-2', {
+                            data: multiLineData,
+                            title: 'Multi-Line Test Chart',
                             height: 400,
-                            sourceText: 'Test data source'
+                            sourceText: 'Test data source',
+                            fieldLabels: {
+                                volume: 'Payment Volume',
+                                value: 'Transaction Value (£m)'
+                            }
                         });
-                        log('✅ Stacked bar chart render called successfully');
+                        log('✅ Multi-line chart render called successfully');
                     } else {
-                        log('❌ PaymentsCharts.render not available for second chart');
-                        document.getElementById('chart-2').innerHTML = '<p style="color: red;">PaymentsCharts.render not available</p>';
+                        log('❌ PaymentsCharts.renderLineChart not available for second chart');
+                        document.getElementById('chart-2').innerHTML = '<p style="color: red;">PaymentsCharts.renderLineChart not available</p>';
                     }
                 } catch (error) {
-                    log('💥 Stacked bar chart error: ' + error.message);
+                    log('💥 Multi-line chart error: ' + error.message);
                     document.getElementById('chart-2').innerHTML = '<p style="color: red;">Error: ' + error.message + '</p>';
                 }
             }, 1000);
+
+            // Test 3: Large dataset
+            setTimeout(() => {
+                log('📈 Testing large dataset with pagination...');
+                try {
+                    if (window.PaymentsCharts && window.PaymentsCharts.renderLineChart) {
+                        window.PaymentsCharts.renderLineChart('chart-3', {
+                            data: largeDataset,
+                            title: 'Large Dataset Test (12 Months)',
+                            height: 400,
+                            sourceText: 'Test data source - monthly data',
+                            notesDescription: 'This chart demonstrates mobile pagination for large datasets. On mobile devices, this will show pagination controls.'
+                        });
+                        log('✅ Large dataset chart render called successfully');
+                    } else {
+                        log('❌ PaymentsCharts.renderLineChart not available for third chart');
+                        document.getElementById('chart-3').innerHTML = '<p style="color: red;">PaymentsCharts.renderLineChart not available</p>';
+                    }
+                } catch (error) {
+                    log('💥 Large dataset chart error: ' + error.message);
+                    document.getElementById('chart-3').innerHTML = '<p style="color: red;">Error: ' + error.message + '</p>';
+                }
+            }, 2000);
         }
 
-        // Also test direct access
+        // Test direct access
         window.testDirect = function() {
             log('🔧 Direct test function called');
             console.log('Direct window.PaymentsCharts:', window.PaymentsCharts);
+        };
+
+        // Test window resize (for responsive behavior)
+        window.testResize = function() {
+            log('📱 Testing responsive behavior...');
+            // Simulate mobile width
+            document.body.style.width = '375px';
+            setTimeout(() => {
+                window.dispatchEvent(new Event('resize'));
+                log('📱 Resize event triggered (mobile simulation)');
+            }, 100);
         };
     </script>
 </body>
