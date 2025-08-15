@@ -1,4 +1,4 @@
-import React, { useState, useEffect, ReactDOM } from "react";
+import React, { useState, useEffect } from "react";
 import {
   BarChart as RechartsBarChart,
   Bar,
@@ -10,6 +10,10 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import "../chart_styles.css"; // Import global styles
+
+
+/* eslint-disable no-undef */
+/* global ReactDOM */
 
 const PaymentsBarChart = ({
   data,
