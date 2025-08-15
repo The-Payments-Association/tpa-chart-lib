@@ -10,8 +10,8 @@ export function createConfig(componentName, inputFile) {
     input: inputFile,
     output: {
       file: `dist/${componentName.toLowerCase()}-payments-charts.min.js`,
-      format: 'iife',
-      name: 'PaymentsCharts',
+      format: 'umd',  // Changed from 'iife' to 'umd'
+      name: 'PaymentsChartsModule', // This won't conflict now
       banner: `/*! Payments Association ${componentName} Charts v1.0.0 | Built ${new Date().toISOString()} */`,
       globals: {
         'react': 'React',
@@ -47,9 +47,9 @@ export function createConfig(componentName, inputFile) {
       }),
       terser({
         compress: {
-          drop_console: true,
+          drop_console: false,  // Keep console.log for debugging
           drop_debugger: true,
-          pure_funcs: ['console.log', 'console.info', 'console.debug', 'console.warn']
+          pure_funcs: ['console.info', 'console.debug']
         },
         mangle: {
           reserved: ['PaymentsCharts', 'React', 'ReactDOM']

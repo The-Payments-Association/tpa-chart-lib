@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Minified Bar Chart</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .debug-info {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            margin: 10px 0;
+            white-space: pre-line;
+        }
+        .chart-container {
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            margin: 10px 0;
+            min-height: 450px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Minified Bar Chart Test</h1>
+    
+    <div class="debug-info" id="debug-info">Loading dependencies...</div>
+
+    <div class="test-container">
+        <h2>Test 1: Single Bar Chart</h2>
+        <div id="chart-1" class="chart-container"></div>
+    </div>
+
+    <div class="test-container">
+        <h2>Test 2: Stacked Bar Chart</h2>
+        <div id="chart-2" class="chart-container"></div>
+    </div>
+
+    <!-- Load React 18 -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <script>
+        let debugLog = '';
+        
+        function log(message) {
+            debugLog += message + '\n';
+            document.getElementById('debug-info').textContent = debugLog;
+            console.log(message);
+        }
+
+        // Initial dependency check
+        log('🔍 Checking dependencies...');
+        log('React version: ' + (React ? React.version : 'NOT LOADED'));
+        log('ReactDOM available: ' + (!!ReactDOM));
+        log('ReactDOM.createRoot available: ' + !!(ReactDOM && ReactDOM.createRoot));
+        log('');
+    </script>
+    
+    <!-- Load your actual minified chart library -->
+    <script src="./dist/bar-payments-charts.min.js"></script>
+    
+    <script>
+        // Wait a moment for the script to load, then test
+        setTimeout(function() {
+            log('📦 Checking PaymentsCharts after load...');
+            log('window.PaymentsCharts type: ' + typeof window.PaymentsCharts);
+            
+            if (window.PaymentsCharts) {
+                log('PaymentsCharts object keys: ' + Object.keys(window.PaymentsCharts).join(', '));
+                log('PaymentsCharts.render type: ' + typeof window.PaymentsCharts.render);
+                log('PaymentsCharts.renderBarChart type: ' + typeof window.PaymentsCharts.renderBarChart);
+            } else {
+                log('❌ window.PaymentsCharts is not available');
+            }
+            log('');
+            
+            // Test the charts
+            runChartTests();
+        }, 500);
+
+        function runChartTests() {
+            log('🚀 Starting chart tests...');
+            
+            // Test data
+            const singleBarData = [
+                { name: "Q1 2024", volume: 145000 },
+                { name: "Q2 2024", volume: 162000 },
+                { name: "Q3 2024", volume: 158000 },
+                { name: "Q4 2024", volume: 171000 }
+            ];
+
+            const stackedBarData = [
+                { name: "Q1 2024", volume: 145000, value: 32060 },
+                { name: "Q2 2024", volume: 162000, value: 42150 },
+                { name: "Q3 2024", volume: 158000, value: 43320 },
+                { name: "Q4 2024", volume: 171000, value: 46840 }
+            ];
+
+            // Test 1: Single bar chart
+            log('📊 Testing single bar chart...');
+            try {
+                if (window.PaymentsCharts && window.PaymentsCharts.render) {
+                    window.PaymentsCharts.render('chart-1', {
+                        data: singleBarData,
+                        title: 'Single Bar Test Chart',
+                        height: 400,
+                        sourceText: 'Test data source'
+                    });
+                    log('✅ Single bar chart render called successfully');
+                } else {
+                    log('❌ PaymentsCharts.render not available');
+                    document.getElementById('chart-1').innerHTML = '<p style="color: red;">PaymentsCharts.render not available</p>';
+                }
+            } catch (error) {
+                log('💥 Single bar chart error: ' + error.message);
+                document.getElementById('chart-1').innerHTML = '<p style="color: red;">Error: ' + error.message + '</p>';
+            }
+
+            // Test 2: Stacked bar chart
+            setTimeout(() => {
+                log('📊 Testing stacked bar chart...');
+                try {
+                    if (window.PaymentsCharts && window.PaymentsCharts.render) {
+                        window.PaymentsCharts.render('chart-2', {
+                            data: stackedBarData,
+                            title: 'Stacked Bar Test Chart',
+                            height: 400,
+                            sourceText: 'Test data source'
+                        });
+                        log('✅ Stacked bar chart render called successfully');
+                    } else {
+                        log('❌ PaymentsCharts.render not available for second chart');
+                        document.getElementById('chart-2').innerHTML = '<p style="color: red;">PaymentsCharts.render not available</p>';
+                    }
+                } catch (error) {
+                    log('💥 Stacked bar chart error: ' + error.message);
+                    document.getElementById('chart-2').innerHTML = '<p style="color: red;">Error: ' + error.message + '</p>';
+                }
+            }, 1000);
+        }
+
+        // Also test direct access
+        window.testDirect = function() {
+            log('🔧 Direct test function called');
+            console.log('Direct window.PaymentsCharts:', window.PaymentsCharts);
+        };
+    </script>
+</body>
+</html>

@@ -23,7 +23,10 @@
   "build:line": "rollup -c rollup.config.line.mjs", 
   "build:pie": "rollup -c rollup.config.pie.mjs",
   "clean": "rimraf dist",
-  "deploy:netlify": "npm run clean && npm run build:all && echo 'Built files ready for Netlify deployment in dist/ folder'"
+  "deploy:netlify": "npm run clean && npm run build:all && echo 'Built files ready for Netlify deployment in dist/ folder'",
+    "serve": "python3 -m http.server 8080",
+    "test:local": "yarn build:bar && python3 -m http.server 8080"
+  
 },
   "eslintConfig": {
     "extends": [
