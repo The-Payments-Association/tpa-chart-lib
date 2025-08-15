@@ -2,7 +2,6 @@
   "name": "tpa-chart-lib",
   "version": "0.1.0",
   "private": true,
-  "type": "module",
   "dependencies": {
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.7.0",
@@ -14,18 +13,18 @@
     "recharts": "^3.1.2",
     "web-vitals": "^2.1.4"
   },
-  "scripts": {
-    "dev": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "build:all": "node build-scripts/build-all.js",
-    "build:bar": "rollup -c rollup.config.bar.js",
-    "build:line": "rollup -c rollup.config.line.js", 
-    "build:pie": "rollup -c rollup.config.pie.js",
-    "clean": "rimraf dist",
-    "deploy:netlify": "npm run clean && npm run build:all && echo 'Built files ready for Netlify deployment in dist/ folder'"
-  },
+"scripts": {
+  "dev": "react-scripts start",
+  "build": "react-scripts build",
+  "test": "react-scripts test",
+  "eject": "react-scripts eject",
+  "build:all": "node build-scripts/build-all.js",
+  "build:bar": "rollup -c rollup.config.bar.mjs",
+  "build:line": "rollup -c rollup.config.line.mjs", 
+  "build:pie": "rollup -c rollup.config.pie.mjs",
+  "clean": "rimraf dist",
+  "deploy:netlify": "npm run clean && npm run build:all && echo 'Built files ready for Netlify deployment in dist/ folder'"
+},
   "eslintConfig": {
     "extends": [
       "react-app",
