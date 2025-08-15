@@ -162,7 +162,7 @@ const PaymentsPieChart = ({
     return topItems;
   };
 
-  // Get responsive configuration
+  // Get responsive configuration - MOBILE DOUBLED, DESKTOP REVERTED
   const getResponsiveConfig = () => {
     const baseData = getPieData();
     const totalValue = baseData.reduce((sum, item) => sum + item.value, 0);
@@ -170,9 +170,9 @@ const PaymentsPieChart = ({
     if (isMobile) {
       return {
         width: "100%",
-        height: 280,
-        margin: { top: 10, right: 20, bottom: 10, left: 20 },
-        outerRadius: 55,
+        height: 700, // DOUBLED - was 350
+        margin: { top: 40, right: 60, bottom: 40, left: 60 }, // DOUBLED
+        outerRadius: 170, // DOUBLED - was 85
         innerRadius: 0,
         showLabels: false,
         showLegend: true,
@@ -184,10 +184,10 @@ const PaymentsPieChart = ({
     } else if (isTablet) {
       return {
         width: width,
-        height: Math.min(height, 350),
-        margin: { top: 20, right: 50, bottom: 20, left: 50 },
-        outerRadius: 90,
-        innerRadius: showInnerRadius ? 30 : 0,
+        height: Math.max(height, 600), // REVERTED - back to original
+        margin: { top: 30, right: 60, bottom: 30, left: 60 }, // REVERTED
+        outerRadius: 170, // REVERTED - back to original
+        innerRadius: showInnerRadius ? 40 : 0, // REVERTED
         showLabels: showLabels,
         showLegend: showLegend && !showLabels,
         legendLayout: "horizontal",
@@ -198,10 +198,10 @@ const PaymentsPieChart = ({
     } else {
       return {
         width: width,
-        height: height,
-        margin: { top: 30, right: 80, bottom: 30, left: 80 },
-        outerRadius: 120,
-        innerRadius: showInnerRadius ? 60 : 0,
+        height: Math.max(height, 450), // REVERTED - back to original
+        margin: { top: 40, right: 100, bottom: 40, left: 100 }, // REVERTED
+        outerRadius: 150, // REVERTED - back to original
+        innerRadius: showInnerRadius ? 80 : 0, // REVERTED
         showLabels: showLabels,
         showLegend: showLegend && !showLabels,
         legendLayout: "horizontal",
@@ -247,13 +247,13 @@ const PaymentsPieChart = ({
       React.createElement('path', { key: 'path2', d: "M6 6l12 12" })
     ]);
 
-  // Desktop custom label with connecting lines
+  // Desktop custom label - MOBILE DOUBLED, DESKTOP REVERTED
   const renderDesktopCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, value, name, index }) => {
     // Only show label if percentage is above threshold
     if (percent < 0.03) return null;
 
     const RADIAN = Math.PI / 180;
-    const labelDistance = isTablet ? 25 : 35;
+    const labelDistance = isMobile ? 70 : isTablet ? 45 : 55; // Mobile doubled, others reverted
     const radius = outerRadius + labelDistance;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
@@ -265,12 +265,12 @@ const PaymentsPieChart = ({
     };
     
     const lineMiddle = {
-      x: cx + (outerRadius + 15) * Math.cos(-midAngle * RADIAN),
-      y: cy + (outerRadius + 15) * Math.sin(-midAngle * RADIAN)
+      x: cx + (outerRadius + (isMobile ? 40 : 20)) * Math.cos(-midAngle * RADIAN), // Mobile doubled, others reverted
+      y: cy + (outerRadius + (isMobile ? 40 : 20)) * Math.sin(-midAngle * RADIAN)
     };
 
     const formatValue = (val) => {
-      if (isTablet) {
+      if (isMobile || isTablet) {
         if (val >= 1000000) return `${(val / 1000000).toFixed(1)}M`;
         if (val >= 1000) return `${(val / 1000).toFixed(1)}K`;
         return val.toString();
@@ -279,8 +279,8 @@ const PaymentsPieChart = ({
     };
 
     const textAnchor = x > cx ? 'start' : 'end';
-    const labelX = textAnchor === 'start' ? x + 3 : x - 3;
-    const maxNameLength = isTablet ? 10 : 12;
+    const labelX = textAnchor === 'start' ? x + (isMobile ? 10 : 5) : x - (isMobile ? 10 : 5); // Mobile doubled, others reverted
+    const maxNameLength = isMobile ? 10 : isTablet ? 12 : 15;
     const displayName = name.length > maxNameLength ? `${name.substring(0, maxNameLength)}...` : name;
 
     return React.createElement('g', { key: `label-${index}` }, [
@@ -289,19 +289,19 @@ const PaymentsPieChart = ({
         key: 'line',
         points: `${lineStart.x},${lineStart.y} ${lineMiddle.x},${lineMiddle.y} ${x},${y}`,
         stroke: colours.mutedForeground,
-        strokeWidth: 0.5,
+        strokeWidth: isMobile ? 2 : 1, // Mobile doubled, others reverted
         fill: "none",
-        opacity: 0.7
+        opacity: 0.8
       }),
       
       // Category name with text shadow for better readability
       React.createElement('text', {
         key: 'name',
         x: labelX,
-        y: y - (isTablet ? 5 : 4),
+    y: y - (isMobile ? 10 : isTablet ? 15 : 10), // Increased spacing from value
         textAnchor: textAnchor,
         fill: colours.foreground,
-        fontSize: isTablet ? "10" : "12",
+        fontSize: isMobile ? "22" : isTablet ? "25" : "14", // Mobile doubled, others reverted
         fontWeight: "600",
         fontFamily: "Arial, sans-serif",
         style: {
@@ -313,11 +313,11 @@ const PaymentsPieChart = ({
       React.createElement('text', {
         key: 'value',
         x: labelX,
-        y: y + (isTablet ? 5 : 6),
+    y: y + (isMobile ? 10 : isTablet ? 15 : 10), // Increased spacing from category name
         textAnchor: textAnchor,
         fill: colours.mutedForeground,
-        fontSize: isTablet ? "9" : "11",
-        fontWeight: "400",
+        fontSize: isMobile ? "20" : isTablet ? "23" : "12", // Mobile doubled, others reverted
+        fontWeight: "500",
         fontFamily: "Arial, sans-serif",
         style: {
           filter: 'drop-shadow(1px 1px 1px rgba(255,255,255,0.8))'
@@ -326,7 +326,7 @@ const PaymentsPieChart = ({
     ]);
   };
 
-  // Mobile tooltip component
+  // Mobile tooltip component - DOUBLED SIZES
   const MobileTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
       const data = payload[0];
@@ -337,11 +337,11 @@ const PaymentsPieChart = ({
         style: {
           backgroundColor: colours.background,
           border: `1px solid ${colours.border}`,
-          borderRadius: "6px",
-          padding: "8px",
-          boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
-          fontSize: "11px",
-          maxWidth: "140px",
+          borderRadius: "16px", // DOUBLED
+          padding: "24px", // DOUBLED
+          boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+          fontSize: "24px", // DOUBLED
+          minWidth: "320px", // DOUBLED
           fontFamily: "Arial, sans-serif"
         }
       }, [
@@ -349,8 +349,9 @@ const PaymentsPieChart = ({
           key: 'label',
           style: {
             fontWeight: "600",
-            marginBottom: "4px",
-            color: colours.foreground
+            marginBottom: "12px", // DOUBLED
+            color: colours.foreground,
+            fontSize: "26px" // DOUBLED
           }
         }, data.name),
         React.createElement('div', {
@@ -358,23 +359,23 @@ const PaymentsPieChart = ({
           style: {
             display: "flex",
             alignItems: "center",
-            gap: "4px"
+            gap: "12px" // DOUBLED
           }
         }, [
           React.createElement('div', {
             key: 'color',
             style: {
-              width: "8px",
-              height: "8px",
+              width: "20px", // DOUBLED
+              height: "20px",
               backgroundColor: data.color,
-              borderRadius: "2px",
+              borderRadius: "4px", // DOUBLED
               flexShrink: 0
             }
           }),
           React.createElement('span', {
             key: 'text',
             style: {
-              fontSize: "10px",
+              fontSize: "22px", // DOUBLED
               color: colours.mutedForeground
             }
           }, `${data.value.toLocaleString()} (${percentage}%)`)
@@ -384,7 +385,7 @@ const PaymentsPieChart = ({
     return null;
   };
 
-  // Desktop/Tablet tooltip component
+  // Desktop/Tablet tooltip component - REVERTED SIZES
   const DesktopTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
       const data = payload[0];
@@ -392,20 +393,21 @@ const PaymentsPieChart = ({
         style: {
           backgroundColor: colours.background,
           border: `1px solid ${colours.border}`,
-          borderRadius: "8px",
-          padding: isTablet ? "10px" : "12px",
+          borderRadius: "10px", // REVERTED
+          padding: isTablet ? "14px" : "16px", // REVERTED
           boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-          fontSize: isTablet ? "13px" : "14px",
-          minWidth: isTablet ? "130px" : "150px",
+          fontSize: isTablet ? "14px" : "15px", // REVERTED
+          minWidth: isTablet ? "160px" : "180px", // REVERTED
           fontFamily: "Arial, sans-serif"
         }
       }, [
         React.createElement('p', {
           key: 'label',
           style: {
-            margin: "0 0 6px 0",
-            fontWeight: "500",
-            color: colours.foreground
+            margin: "0 0 8px 0", // REVERTED
+            fontWeight: "600",
+            color: colours.foreground,
+            fontSize: isTablet ? "15px" : "16px" // REVERTED
           }
         }, data.name),
         React.createElement('div', {
@@ -413,23 +415,23 @@ const PaymentsPieChart = ({
           style: {
             display: "flex",
             alignItems: "center",
-            gap: "6px"
+            gap: "8px" // REVERTED
           }
         }, [
           React.createElement('div', {
             key: 'color',
             style: {
-              width: "10px",
-              height: "10px",
+              width: "12px", // REVERTED
+              height: "12px",
               backgroundColor: data.color,
-              borderRadius: "2px",
+              borderRadius: "3px", // REVERTED
               flexShrink: 0
             }
           }),
           React.createElement('span', {
             key: 'text',
             style: {
-              fontSize: isTablet ? "12px" : "13px",
+              fontSize: isTablet ? "13px" : "14px", // REVERTED
               color: colours.mutedForeground,
               display: "flex",
               alignItems: "center"
@@ -439,9 +441,9 @@ const PaymentsPieChart = ({
             React.createElement('span', {
               key: 'value',
               style: {
-                fontWeight: "500",
+                fontWeight: "600",
                 color: colours.foreground,
-                marginLeft: "4px"
+                marginLeft: "6px" // REVERTED
               }
             }, data.value.toLocaleString())
           ])
@@ -480,7 +482,7 @@ const PaymentsPieChart = ({
           key: `cell-${index}`,
           fill: entry.color,
           stroke: hoveredIndex === index ? colours.foreground : 'none',
-          strokeWidth: hoveredIndex === index ? 2 : 0,
+          strokeWidth: hoveredIndex === index ? (isMobile ? 6 : 3) : 0, // Mobile doubled, others reverted
           style: {
             filter: hoveredIndex === index ? 'brightness(1.1)' : 'none',
             cursor: 'pointer',
@@ -495,8 +497,8 @@ const PaymentsPieChart = ({
       config.showLegend && React.createElement(Legend, {
         key: 'legend',
         wrapperStyle: {
-          paddingTop: isMobile ? "10px" : isTablet ? "15px" : "20px",
-          fontSize: isMobile ? "10px" : isTablet ? "11px" : "13px",
+          paddingTop: isMobile ? "30px" : isTablet ? "20px" : "25px", // Mobile doubled, others reverted
+          fontSize: isMobile ? "22px" : isTablet ? "12px" : "14px", // Mobile doubled, others reverted
           color: colours.mutedForeground,
           fontFamily: "Arial, sans-serif"
         },
@@ -506,7 +508,7 @@ const PaymentsPieChart = ({
     ]));
   };
 
-  // Notes modal
+  // Notes modal - MOBILE DOUBLED, DESKTOP REVERTED
   const NotesModal = () => {
     if (!showNotesModal || !notesDescription) return null;
 
@@ -522,7 +524,7 @@ const PaymentsPieChart = ({
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 9999,
-        padding: isMobile ? '16px' : '32px'
+        padding: isMobile ? '32px' : '32px' // Mobile doubled, desktop reverted
       },
       onClick: (e) => {
         if (e.target === e.currentTarget) {
@@ -532,9 +534,9 @@ const PaymentsPieChart = ({
     }, React.createElement('div', {
       style: {
         backgroundColor: colours.background,
-        borderRadius: '12px',
+        borderRadius: isMobile ? '24px' : '12px', // Mobile doubled, desktop reverted
         border: `1px solid ${colours.border}`,
-        maxWidth: isMobile ? '100%' : '500px',
+        maxWidth: isMobile ? '100%' : '500px', // Mobile same, desktop reverted
         width: '100%',
         maxHeight: '80vh',
         overflowY: 'auto',
@@ -547,7 +549,7 @@ const PaymentsPieChart = ({
       React.createElement('div', {
         key: 'header',
         style: {
-          padding: isMobile ? '16px' : '24px',
+          padding: isMobile ? '32px' : '24px', // Mobile doubled, desktop reverted
           borderBottom: `1px solid ${colours.border}`,
           display: 'flex',
           alignItems: 'center',
@@ -558,7 +560,7 @@ const PaymentsPieChart = ({
           key: 'title',
           style: {
             margin: 0,
-            fontSize: isMobile ? '16px' : '18px',
+            fontSize: isMobile ? '32px' : '18px', // Mobile doubled, desktop reverted
             fontWeight: '600',
             color: colours.foreground
           }
@@ -569,9 +571,9 @@ const PaymentsPieChart = ({
           style: {
             background: 'none',
             border: 'none',
-            padding: '4px',
+            padding: isMobile ? '8px' : '4px', // Mobile doubled, desktop reverted
             cursor: 'pointer',
-            borderRadius: '4px',
+            borderRadius: isMobile ? '8px' : '4px', // Mobile doubled, desktop reverted
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center'
@@ -582,18 +584,18 @@ const PaymentsPieChart = ({
           onMouseOut: (e) => {
             e.target.style.backgroundColor = 'transparent';
           }
-        }, React.createElement(CloseIcon, { size: 20 }))
+        }, React.createElement(CloseIcon, { size: isMobile ? 40 : 20 })) // Mobile doubled, desktop reverted
       ]),
       // Modal content
       React.createElement('div', {
         key: 'content',
         style: {
-          padding: isMobile ? '16px' : '24px'
+          padding: isMobile ? '32px' : '24px' // Mobile doubled, desktop reverted
         }
       }, React.createElement('p', {
         style: {
           margin: 0,
-          fontSize: isMobile ? '14px' : '16px',
+          fontSize: isMobile ? '28px' : '16px', // Mobile doubled, desktop reverted
           lineHeight: '1.6',
           color: colours.foreground,
           whiteSpace: 'pre-wrap'
@@ -603,7 +605,7 @@ const PaymentsPieChart = ({
       React.createElement('div', {
         key: 'footer',
         style: {
-          padding: isMobile ? '12px 16px 16px' : '16px 24px 24px',
+          padding: isMobile ? '24px 32px 32px' : '16px 24px 24px', // Mobile doubled, desktop reverted
           borderTop: `1px solid ${colours.border}`,
           display: 'flex',
           justifyContent: 'flex-end'
@@ -611,12 +613,12 @@ const PaymentsPieChart = ({
       }, React.createElement('button', {
         onClick: () => setShowNotesModal(false),
         style: {
-          padding: '8px 16px',
-          fontSize: '14px',
+          padding: isMobile ? '16px 32px' : '8px 16px', // Mobile doubled, desktop reverted
+          fontSize: isMobile ? '28px' : '14px', // Mobile doubled, desktop reverted
           backgroundColor: colours.primary,
           color: 'white',
           border: 'none',
-          borderRadius: '6px',
+          borderRadius: isMobile ? '12px' : '6px', // Mobile doubled, desktop reverted
           cursor: 'pointer',
           fontFamily: 'Arial, sans-serif',
           fontWeight: '500'
@@ -637,7 +639,7 @@ const PaymentsPieChart = ({
       style: {
         backgroundColor: colours.card,
         border: `1px solid ${colours.border}`,
-        borderRadius: "12px",
+        borderRadius: isMobile ? "24px" : "12px", // Mobile doubled, desktop reverted
         fontFamily: "Arial, sans-serif",
         overflow: "hidden",
         width: "100%",
@@ -645,11 +647,11 @@ const PaymentsPieChart = ({
       },
       className: className
     }, [
-      // Header
+      // Header - MOBILE DOUBLED, DESKTOP REVERTED
       React.createElement('div', {
         key: 'header',
         style: {
-          padding: isMobile ? "16px 16px 0 16px" : isTablet ? "20px 20px 0 20px" : "24px 24px 0 24px",
+          padding: isMobile ? "32px 32px 0 32px" : isTablet ? "20px 20px 0 20px" : "24px 24px 0 24px", // Mobile doubled, others reverted
           display: "flex",
           alignItems: "flex-start",
           justifyContent: "space-between",
@@ -667,8 +669,8 @@ const PaymentsPieChart = ({
           title && React.createElement('h3', {
             key: 'title',
             style: {
-              margin: "0 0 2px 0",
-              fontSize: isMobile ? "16px" : isTablet ? "17px" : "18px",
+              margin: isMobile ? "0 0 4px 0" : "0 0 2px 0", // Mobile doubled, desktop reverted
+              fontSize: isMobile ? "32px" : isTablet ? "17px" : "18px", // Mobile doubled, others reverted
               fontWeight: "600",
               color: colours.foreground,
               lineHeight: "1.25",
@@ -679,7 +681,7 @@ const PaymentsPieChart = ({
             key: 'subtitle',
             style: {
               margin: "0",
-              fontSize: isMobile ? "12px" : isTablet ? "13px" : "14px",
+              fontSize: isMobile ? "24px" : isTablet ? "13px" : "14px", // Mobile doubled, others reverted
               color: colours.mutedForeground,
               fontWeight: "400"
             }
@@ -688,7 +690,7 @@ const PaymentsPieChart = ({
         showLogo && React.createElement('div', {
           key: 'logo-section',
           style: {
-            marginLeft: isMobile ? "8px" : "16px",
+            marginLeft: isMobile ? "16px" : "16px", // Mobile doubled, desktop same
             flexShrink: 0
           }
         }, React.createElement('div', {
@@ -701,30 +703,30 @@ const PaymentsPieChart = ({
           src: "https://res.cloudinary.com/dmlmugaye/image/upload/v1754492437/PA_Logo_Black_xlb4mj.svg",
           alt: "The Payments Association",
           style: {
-            height: isMobile ? "30px" : isTablet ? "35px" : "40px",
+            height: isMobile ? "60px" : isTablet ? "35px" : "40px", // Mobile doubled, others reverted
             width: "auto",
             maxWidth: "100%"
           }
         })))
       ]),
 
-      // Chart section
+      // Chart section - MOBILE DOUBLED, DESKTOP REVERTED
       React.createElement('div', {
         key: 'chart',
         style: {
-          padding: isMobile ? "16px" : isTablet ? "20px" : "24px",
+          padding: isMobile ? "40px" : isTablet ? "24px" : "32px", // Mobile doubled, others reverted
           backgroundColor: colours.cardTint,
           boxSizing: "border-box"
         }
       }, renderResponsiveChart()),
 
-      // Footer
+      // Footer - MOBILE DOUBLED, DESKTOP REVERTED
       React.createElement('div', {
         key: 'footer',
         style: {
-          padding: isMobile ? "0 16px 16px 16px" : isTablet ? "0 20px 18px 20px" : "0 24px 20px 24px",
+          padding: isMobile ? "0 32px 32px 32px" : isTablet ? "0 20px 18px 20px" : "0 24px 20px 24px", // Mobile doubled, others reverted
           borderTop: `1px solid ${colours.border}`,
-          paddingTop: isMobile ? "12px" : isTablet ? "14px" : "16px",
+          paddingTop: isMobile ? "24px" : isTablet ? "14px" : "16px", // Mobile doubled, others reverted
           backgroundColor: colours.card,
           boxSizing: "border-box"
         }
@@ -732,7 +734,7 @@ const PaymentsPieChart = ({
         style: {
           display: 'flex',
           flexDirection: isMobile ? 'column' : 'row',
-          gap: isMobile ? '8px' : '16px',
+          gap: isMobile ? '16px' : '16px', // Mobile doubled, desktop same
           alignItems: isMobile ? 'flex-start' : 'center',
           justifyContent: 'space-between'
         }
@@ -742,7 +744,7 @@ const PaymentsPieChart = ({
           style: {
             display: 'flex',
             flexDirection: isMobile ? 'column' : 'row',
-            gap: isMobile ? '4px' : '16px',
+            gap: isMobile ? '8px' : '16px', // Mobile doubled, desktop same
             alignItems: isMobile ? 'flex-start' : 'center'
           }
         }, [
@@ -753,7 +755,7 @@ const PaymentsPieChart = ({
             rel: "noopener noreferrer",
             style: {
               margin: "0",
-              fontSize: isMobile ? "10px" : isTablet ? "11px" : "12px",
+              fontSize: isMobile ? "20px" : isTablet ? "11px" : "12px", // Mobile doubled, others reverted
               color: colours.mutedForeground,
               fontWeight: "400",
               textDecoration: "underline",
@@ -769,86 +771,85 @@ const PaymentsPieChart = ({
             key: 'source',
             style: {
               margin: "0",
-              fontSize: isMobile ? "10px" : isTablet ? "11px" : "12px",
+              fontSize: isMobile ? "20px" : isTablet ? "11px" : "12px", // Mobile doubled, others reverted
               color: colours.mutedForeground,
-              fontWeight: "400"
-            }
-          }, `Source: ${sourceText}`),
-          React.createElement('span', {
-            key: 'chart-info',
-            style: {
-              margin: "0",
-              fontSize: isMobile ? "10px" : isTablet ? "11px" : "12px",
-              color: colours.mutedForeground,
-              fontWeight: "400"
-            }
-          }, "Chart: Payments Intelligence")
-        ]),
-        // Notes icon
-        notesDescription && React.createElement('div', {
-          key: 'notes-section',
-          style: {
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            cursor: 'pointer',
-            padding: '4px',
-            borderRadius: '4px'
-          },
-          onClick: () => setShowNotesModal(true),
-          onMouseOver: (e) => {
-            e.currentTarget.style.backgroundColor = colours.muted;
-          },
-          onMouseOut: (e) => {
-            e.currentTarget.style.backgroundColor = 'transparent';
-          },
-          title: "View chart notes"
-        }, [
-          React.createElement(InfoIcon, {
-            key: 'icon',
-            size: isMobile ? 14 : 16
-          }),
-          React.createElement('span', {
-            key: 'text',
-            style: {
-              margin: "0",
-              fontSize: isMobile ? "9px" : isTablet ? "10px" : "11px",
-              color: colours.mutedForeground,
-              fontWeight: "400"
-            }
-          }, "Notes")
-        ])
-      ]))
-    ]),
-    React.createElement(NotesModal, { key: 'modal' })
-  ]);
+              fontWeight: "400",}
+         }, `Source: ${sourceText}`),
+         React.createElement('span', {
+           key: 'chart-info',
+           style: {
+             margin: "0",
+             fontSize: isMobile ? "20px" : isTablet ? "11px" : "12px", // Mobile doubled, others reverted
+             color: colours.mutedForeground,
+             fontWeight: "400"
+           }
+         }, "Chart: Payments Intelligence")
+       ]),
+       // Notes icon
+       notesDescription && React.createElement('div', {
+         key: 'notes-section',
+         style: {
+           display: 'flex',
+           alignItems: 'center',
+           gap: isMobile ? '12px' : '6px', // Mobile doubled, desktop reverted
+           cursor: 'pointer',
+           padding: isMobile ? '8px' : '4px', // Mobile doubled, desktop reverted
+           borderRadius: isMobile ? '8px' : '4px' // Mobile doubled, desktop reverted
+         },
+         onClick: () => setShowNotesModal(true),
+         onMouseOver: (e) => {
+           e.currentTarget.style.backgroundColor = colours.muted;
+         },
+         onMouseOut: (e) => {
+           e.currentTarget.style.backgroundColor = 'transparent';
+         },
+         title: "View chart notes"
+       }, [
+         React.createElement(InfoIcon, {
+           key: 'icon',
+           size: isMobile ? 28 : 16 // Mobile doubled, desktop reverted
+         }),
+         React.createElement('span', {
+           key: 'text',
+           style: {
+             margin: "0",
+             fontSize: isMobile ? "18px" : isTablet ? "10px" : "11px", // Mobile doubled, others reverted
+             color: colours.mutedForeground,
+             fontWeight: "400"
+           }
+         }, "Notes")
+       ])
+     ]))
+   ]),
+   React.createElement(NotesModal, { key: 'modal' })
+ ]);
 };
 
 // Sample data for pie chart
 const samplePaymentsPieData = [
-  { name: "Card payments", volume: 145000 },
-  { name: "Bank transfers", volume: 89000 },
-  { name: "Digital wallets", volume: 67000 },
-  { name: "Direct debit", volume: 34000 },
-  { name: "Cash", volume: 12000 },
-  { name: "Cheques", volume: 3000 }
+ { name: "Card payments", volume: 145000 },
+ { name: "Bank transfers", volume: 89000 },
+ { name: "Digital wallets", volume: 67000 },
+ { name: "Direct debit", volume: 34000 },
+ { name: "Cash", volume: 12000 },
+ { name: "Cheques", volume: 3000 }
 ];
 
 // CRITICAL: Global setup for UMD
 if (typeof window !== 'undefined') {
-  console.log('Setting up PaymentsCharts Pie global...');
-  
-  // Ensure the global namespace exists
-  window.PaymentsCharts = window.PaymentsCharts || {};
-  
-  // Add the pie chart render method
-  window.PaymentsCharts.renderPieChart = function (containerId, options = {}) {
-    console.log('renderPieChart called with:', containerId, options);
-    
-    const container = document.getElementById(containerId);
-    if (!container) {
-      console.error(`Container with ID ${containerId} not found`);
-      return;
+ console.log('Setting up PaymentsCharts Pie global...');
+ 
+ // Ensure the global namespace exists
+ window.PaymentsCharts = window.PaymentsCharts || {};
+ 
+ // Add the pie chart render method
+ window.PaymentsCharts.renderPieChart = function (containerId, options = {}) {
+   console.log('renderPieChart called with:', containerId, options);
+   
+   const container = document.getElementById(containerId);
+   if (!container) {
+     console.error(`Container with ID ${containerId} not found`);
+     return;
    }
 
    try {
