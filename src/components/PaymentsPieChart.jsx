@@ -287,7 +287,7 @@ const PaymentsPieChart = ({
     if (numericKeys.length === 0) return [];
     
     const dataKey = numericKeys[0];
-    
+      
     // Calculate total for percentage calculations
     const total = data.reduce((sum, item) => sum + item[dataKey], 0);
     

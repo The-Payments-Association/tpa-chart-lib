@@ -2,6 +2,7 @@
   "name": "tpa-chart-lib",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "dependencies": {
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.7.0",
@@ -17,7 +18,13 @@
     "dev": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "build:all": "node build-scripts/build-all.js",
+    "build:bar": "rollup -c rollup.config.bar.js",
+    "build:line": "rollup -c rollup.config.line.js", 
+    "build:pie": "rollup -c rollup.config.pie.js",
+    "clean": "rimraf dist",
+    "deploy:netlify": "npm run clean && npm run build:all && echo 'Built files ready for Netlify deployment in dist/ folder'"
   },
   "eslintConfig": {
     "extends": [
@@ -36,5 +43,17 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@babel/preset-env": "^7.23.9",
+    "@babel/preset-react": "^7.23.3",
+    "@rollup/plugin-babel": "^6.0.4",
+    "@rollup/plugin-commonjs": "^25.0.7",
+    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-replace": "^5.0.5",
+    "@rollup/plugin-terser": "^0.4.4",
+    "rollup": "^4.12.0",
+    "rollup-plugin-postcss": "^4.0.2",
+    "rimraf": "^5.0.5"
   }
 }
