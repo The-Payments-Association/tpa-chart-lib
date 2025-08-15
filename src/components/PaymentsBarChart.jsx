@@ -762,7 +762,6 @@ const PaymentsBarChart = ({
   );
 };
 
-// Sample data
 const samplePaymentsData = [
   { name: "Q1 2024", volume: 145000, value: 32060 },
   { name: "Q2 2024", volume: 162000, value: 42150 },
@@ -772,121 +771,124 @@ const samplePaymentsData = [
   { name: "Q2 2025", volume: 203000, value: 56780 }
 ];
 
-// Ensure the global namespace exists and doesn't conflict
-window.PaymentsCharts = window.PaymentsCharts || {};
+// Ensure the global namespace exists
+if (typeof window !== 'undefined') {
+  // Initialize the global object properly
+  window.PaymentsCharts = window.PaymentsCharts || {};
 
-// Add this specific chart type with improved error handling
-window.PaymentsCharts.renderBarChart = function (containerId, options = {}) {
-  const container = document.getElementById(containerId);
-  if (!container) {
-    console.error(`Container with ID ${containerId} not found`);
-    return;
-  }
-
-  try {
-    // Check React availability
-    if (typeof React === 'undefined') {
-      throw new Error('React is not available. Please load React before the chart library.');
-    }
-    
-    if (typeof ReactDOM === 'undefined') {
-      throw new Error('ReactDOM is not available. Please load ReactDOM before the chart library.');
+  // Add this specific chart type with improved error handling
+  window.PaymentsCharts.renderBarChart = function (containerId, options = {}) {
+    const container = document.getElementById(containerId);
+    if (!container) {
+      console.error(`Container with ID ${containerId} not found`);
+      return;
     }
 
-    const data = options.data || samplePaymentsData;
-
-    // Try modern React 18+ createRoot first, fallback to legacy render
-    if (ReactDOM.createRoot) {
-      console.log('Using React 18+ createRoot');
-      const root = ReactDOM.createRoot(container);
-      root.render(
-        React.createElement(PaymentsBarChart, {
-          data: data,
-          width: options.width,
-          height: options.height,
-          title: options.title,
-          showLogo: options.showLogo,
-          className: options.className,
-          sourceText: options.sourceText,
-          sourceUrl: options.sourceUrl,
-          notesDescription: options.notesDescription,
-        })
-      );
-    } else if (ReactDOM.render) {
-      console.log('Using legacy ReactDOM.render');
-      ReactDOM.render(
-        React.createElement(PaymentsBarChart, {
-          data: data,
-          width: options.width,
-          height: options.height,
-          title: options.title,
-          showLogo: options.showLogo,
-          className: options.className,
-          sourceText: options.sourceText,
-          sourceUrl: options.sourceUrl,
-          notesDescription: options.notesDescription,
-        }),
-        container
-      );
-    } else {
-      throw new Error('No suitable React render method found');
-    }
-
-    console.log('Bar chart rendered successfully');
-  } catch (error) {
-    console.error('Error rendering bar chart:', error);
-    container.innerHTML = `
-      <div style="
-        color: #ef4444; 
-        background: #fef2f2; 
-        padding: 20px; 
-        border-radius: 8px; 
-        border: 1px solid #fecaca;
-        font-family: ui-sans-serif, system-ui, sans-serif;
-      ">
-        <h4 style="margin: 0 0 8px 0; font-size: 16px;">Chart Loading Error</h4>
-        <p style="margin: 0; font-size: 14px;">${error.message}</p>
-      </div>
-    `;
-  }
-};
-
-// Keep backward compatibility
-window.PaymentsCharts.render = window.PaymentsCharts.renderBarChart;
-
-// Auto-render functionality with better error handling
-document.addEventListener("DOMContentLoaded", function () {
-  console.log('DOM loaded, looking for auto-render charts');
-  const chartContainers = document.querySelectorAll("[data-payments-chart]");
-  
-  if (chartContainers.length === 0) {
-    console.log('No auto-render chart containers found');
-    return;
-  }
-
-  console.log(`Found ${chartContainers.length} chart containers for auto-render`);
-  
-  chartContainers.forEach((container) => {
     try {
-      const chartData = container.getAttribute("data-chart-data");
-      const chartTitle = container.getAttribute("data-chart-title");
-      const showLogo = container.getAttribute("data-show-logo") !== "false";
-      const sourceText = container.getAttribute("data-source-text");
-      const sourceUrl = container.getAttribute("data-source-url");
-      const notesDescription = container.getAttribute("data-notes-description");
+      // Check React availability
+      if (typeof React === 'undefined') {
+        throw new Error('React is not available. Please load React before the chart library.');
+      }
+      
+      if (typeof ReactDOM === 'undefined') {
+        throw new Error('ReactDOM is not available. Please load ReactDOM before the chart library.');
+      }
 
-      window.PaymentsCharts.renderBarChart(container.id, {
-        data: chartData ? JSON.parse(chartData) : undefined,
-        title: chartTitle,
-        showLogo: showLogo,
-        sourceText: sourceText,
-        sourceUrl: sourceUrl,
-        notesDescription: notesDescription,
-      });
+      const data = options.data || samplePaymentsData;
+
+      // Try modern React 18+ createRoot first, fallback to legacy render
+      if (ReactDOM.createRoot) {
+        console.log('Using React 18+ createRoot');
+        const root = ReactDOM.createRoot(container);
+        root.render(
+          React.createElement(PaymentsBarChart, {
+            data: data,
+            width: options.width,
+            height: options.height,
+            title: options.title,
+            showLogo: options.showLogo,
+            className: options.className,
+            sourceText: options.sourceText,
+            sourceUrl: options.sourceUrl,
+            notesDescription: options.notesDescription,
+          })
+        );
+      } else if (ReactDOM.render) {
+        console.log('Using legacy ReactDOM.render');
+        ReactDOM.render(
+          React.createElement(PaymentsBarChart, {
+            data: data,
+            width: options.width,
+            height: options.height,
+            title: options.title,
+            showLogo: options.showLogo,
+            className: options.className,
+            sourceText: options.sourceText,
+            sourceUrl: options.sourceUrl,
+            notesDescription: options.notesDescription,
+          }),
+          container
+        );
+      } else {
+        throw new Error('No suitable React render method found');
+      }
+
+      console.log('Bar chart rendered successfully');
     } catch (error) {
-      console.error('Error in auto-render for container:', container.id, error);
+      console.error('Error rendering bar chart:', error);
+      container.innerHTML = `
+        <div style="
+          color: #ef4444; 
+          background: #fef2f2; 
+          padding: 20px; 
+          border-radius: 8px; 
+          border: 1px solid #fecaca;
+          font-family: ui-sans-serif, system-ui, sans-serif;
+        ">
+          <h4 style="margin: 0 0 8px 0; font-size: 16px;">Chart Loading Error</h4>
+          <p style="margin: 0; font-size: 14px;">${error.message}</p>
+        </div>
+      `;
     }
+  };
+
+  // Keep backward compatibility - THIS IS THE KEY FIX
+  window.PaymentsCharts.render = window.PaymentsCharts.renderBarChart;
+
+  // Auto-render functionality with better error handling
+  document.addEventListener("DOMContentLoaded", function () {
+    console.log('DOM loaded, looking for auto-render charts');
+    const chartContainers = document.querySelectorAll("[data-payments-chart]");
+    
+    if (chartContainers.length === 0) {
+      console.log('No auto-render chart containers found');
+      return;
+    }
+
+    console.log(`Found ${chartContainers.length} chart containers for auto-render`);
+    
+    chartContainers.forEach((container) => {
+      try {
+        const chartData = container.getAttribute("data-chart-data");
+        const chartTitle = container.getAttribute("data-chart-title");
+        const showLogo = container.getAttribute("data-show-logo") !== "false";
+        const sourceText = container.getAttribute("data-source-text");
+        const sourceUrl = container.getAttribute("data-source-url");
+        const notesDescription = container.getAttribute("data-notes-description");
+
+        window.PaymentsCharts.renderBarChart(container.id, {
+          data: chartData ? JSON.parse(chartData) : undefined,
+          title: chartTitle,
+          showLogo: showLogo,
+          sourceText: sourceText,
+          sourceUrl: sourceUrl,
+          notesDescription: notesDescription,
+        });
+      } catch (error) {
+        console.error('Error in auto-render for container:', container.id, error);
+      }
+    });
   });
-});
+}
 
 export default PaymentsBarChart;
