@@ -15,7 +15,7 @@
   },
 "scripts": {
   "dev": "react-scripts start",
-  "build": "react-scripts build",
+    "build": "react-scripts build && yarn build:all && cp dist/*.js build/",
   "test": "react-scripts test",
   "eject": "react-scripts eject",
   "build:all": "node build-scripts/build-all.js",

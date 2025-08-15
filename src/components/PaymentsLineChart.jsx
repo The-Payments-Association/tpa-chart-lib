@@ -422,7 +422,7 @@ const PaymentsLineChart = ({
               data={visibleData}
               margin={{
                 top: isMobile ? 20 : 30,
-                right: isMobile ? 0 : 0,
+                right: isMobile ? 0 : 10,
                 left: isMobile ? 0 : 0,
                 bottom: 5,
               }}
