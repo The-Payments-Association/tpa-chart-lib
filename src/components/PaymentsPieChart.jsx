@@ -28,17 +28,45 @@ const PaymentsPieChart = ({
   const [windowWidth, setWindowWidth] = useState(
     typeof window !== "undefined" ? window.innerWidth : 1200
   );
+  const [chartKey, setChartKey] = useState(0);
   const [showNotesModal, setShowNotesModal] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState(null);
 
-  // Responsive event listener
+  const isMobile = windowWidth < 768;
+  const isTablet = windowWidth >= 768 && windowWidth < 1024;
+
+  // Debounce utility function
+  const debounce = (func, wait) => {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  };
+
+  // Responsive event listener with breakpoint detection
   useEffect(() => {
     const handleResize = () => {
-      setWindowWidth(window.innerWidth);
+      const newWidth = window.innerWidth;
+      const previousBreakpoint = windowWidth < 768 ? 'mobile' : windowWidth < 1024 ? 'tablet' : 'desktop';
+      const currentBreakpoint = newWidth < 768 ? 'mobile' : newWidth < 1024 ? 'tablet' : 'desktop';
+      
+      setWindowWidth(newWidth);
+      
+      // Force complete re-render when breakpoint changes
+      if (previousBreakpoint !== currentBreakpoint) {
+        setChartKey(prev => prev + 1);
+      }
     };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+
+    const debouncedResize = debounce(handleResize, 150);
+    window.addEventListener("resize", debouncedResize);
+    return () => window.removeEventListener("resize", debouncedResize);
+  }, [windowWidth]);
 
   // Modal keyboard handling
   useEffect(() => {
@@ -60,10 +88,6 @@ const PaymentsPieChart = ({
       document.body.style.overflow = "unset";
     };
   }, [showNotesModal]);
-
-  // Device breakpoints
-  const isMobile = windowWidth < 768;
-  const isTablet = windowWidth >= 768 && windowWidth < 1024;
 
   const colours = {
     primary: "#00dfb8",
@@ -117,6 +141,77 @@ const PaymentsPieChart = ({
     }));
   };
 
+  // Mobile optimised data - show only top items, group others
+  const getMobileOptimisedData = () => {
+    const pieData = getPieData();
+    if (pieData.length <= 5) return pieData;
+
+    const sortedData = [...pieData].sort((a, b) => b.value - a.value);
+    const topItems = sortedData.slice(0, 4);
+    const otherItems = sortedData.slice(4);
+    
+    if (otherItems.length > 0) {
+      const otherTotal = otherItems.reduce((sum, item) => sum + item.value, 0);
+      topItems.push({
+        name: "Other",
+        value: otherTotal,
+        color: colours.mutedForeground
+      });
+    }
+    
+    return topItems;
+  };
+
+  // Get responsive configuration
+  const getResponsiveConfig = () => {
+    const baseData = getPieData();
+    const totalValue = baseData.reduce((sum, item) => sum + item.value, 0);
+
+    if (isMobile) {
+      return {
+        width: "100%",
+        height: 280,
+        margin: { top: 10, right: 20, bottom: 10, left: 20 },
+        outerRadius: 55,
+        innerRadius: 0,
+        showLabels: false,
+        showLegend: true,
+        legendLayout: "horizontal",
+        data: getMobileOptimisedData(),
+        paddingAngle: 2,
+        totalValue
+      };
+    } else if (isTablet) {
+      return {
+        width: width,
+        height: Math.min(height, 350),
+        margin: { top: 20, right: 50, bottom: 20, left: 50 },
+        outerRadius: 90,
+        innerRadius: showInnerRadius ? 30 : 0,
+        showLabels: showLabels,
+        showLegend: showLegend && !showLabels,
+        legendLayout: "horizontal",
+        data: baseData,
+        paddingAngle: 1,
+        totalValue
+      };
+    } else {
+      return {
+        width: width,
+        height: height,
+        margin: { top: 30, right: 80, bottom: 30, left: 80 },
+        outerRadius: 120,
+        innerRadius: showInnerRadius ? 60 : 0,
+        showLabels: showLabels,
+        showLegend: showLegend && !showLabels,
+        legendLayout: "horizontal",
+        data: baseData,
+        paddingAngle: 1,
+        totalValue
+      };
+    }
+  };
+
   // Info icon component
   const InfoIcon = ({ size = 16, color = colours.mutedForeground }) => 
     React.createElement('svg', {
@@ -152,15 +247,13 @@ const PaymentsPieChart = ({
       React.createElement('path', { key: 'path2', d: "M6 6l12 12" })
     ]);
 
-  // Custom label with connecting lines
-  const renderCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, value, name, index }) => {
-    if (!showLabels) return null;
-    
+  // Desktop custom label with connecting lines
+  const renderDesktopCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, value, name, index }) => {
     // Only show label if percentage is above threshold
-    if (percent < 0.03) return null; // Don't show labels for slices less than 3%
+    if (percent < 0.03) return null;
 
     const RADIAN = Math.PI / 180;
-    const labelDistance = isMobile ? 25 : 35;
+    const labelDistance = isTablet ? 25 : 35;
     const radius = outerRadius + labelDistance;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
@@ -177,7 +270,7 @@ const PaymentsPieChart = ({
     };
 
     const formatValue = (val) => {
-      if (isMobile) {
+      if (isTablet) {
         if (val >= 1000000) return `${(val / 1000000).toFixed(1)}M`;
         if (val >= 1000) return `${(val / 1000).toFixed(1)}K`;
         return val.toString();
@@ -187,7 +280,7 @@ const PaymentsPieChart = ({
 
     const textAnchor = x > cx ? 'start' : 'end';
     const labelX = textAnchor === 'start' ? x + 3 : x - 3;
-    const maxNameLength = isMobile ? 8 : 12;
+    const maxNameLength = isTablet ? 10 : 12;
     const displayName = name.length > maxNameLength ? `${name.substring(0, maxNameLength)}...` : name;
 
     return React.createElement('g', { key: `label-${index}` }, [
@@ -205,10 +298,10 @@ const PaymentsPieChart = ({
       React.createElement('text', {
         key: 'name',
         x: labelX,
-        y: y - (isMobile ? 6 : 4),
+        y: y - (isTablet ? 5 : 4),
         textAnchor: textAnchor,
         fill: colours.foreground,
-        fontSize: isMobile ? "9" : "12",
+        fontSize: isTablet ? "10" : "12",
         fontWeight: "600",
         fontFamily: "Arial, sans-serif",
         style: {
@@ -220,10 +313,10 @@ const PaymentsPieChart = ({
       React.createElement('text', {
         key: 'value',
         x: labelX,
-        y: y + (isMobile ? 4 : 6),
+        y: y + (isTablet ? 5 : 6),
         textAnchor: textAnchor,
         fill: colours.mutedForeground,
-        fontSize: isMobile ? "8" : "11",
+        fontSize: isTablet ? "9" : "11",
         fontWeight: "400",
         fontFamily: "Arial, sans-serif",
         style: {
@@ -233,8 +326,66 @@ const PaymentsPieChart = ({
     ]);
   };
 
-  // Custom tooltip
-  const CustomTooltip = ({ active, payload }) => {
+  // Mobile tooltip component
+  const MobileTooltip = ({ active, payload }) => {
+    if (active && payload && payload.length) {
+      const data = payload[0];
+      const config = getResponsiveConfig();
+      const percentage = ((data.value / config.totalValue) * 100).toFixed(1);
+      
+      return React.createElement('div', {
+        style: {
+          backgroundColor: colours.background,
+          border: `1px solid ${colours.border}`,
+          borderRadius: "6px",
+          padding: "8px",
+          boxShadow: "0 2px 4px rgba(0, 0, 0, 0.1)",
+          fontSize: "11px",
+          maxWidth: "140px",
+          fontFamily: "Arial, sans-serif"
+        }
+      }, [
+        React.createElement('div', {
+          key: 'label',
+          style: {
+            fontWeight: "600",
+            marginBottom: "4px",
+            color: colours.foreground
+          }
+        }, data.name),
+        React.createElement('div', {
+          key: 'content',
+          style: {
+            display: "flex",
+            alignItems: "center",
+            gap: "4px"
+          }
+        }, [
+          React.createElement('div', {
+            key: 'color',
+            style: {
+              width: "8px",
+              height: "8px",
+              backgroundColor: data.color,
+              borderRadius: "2px",
+              flexShrink: 0
+            }
+          }),
+          React.createElement('span', {
+            key: 'text',
+            style: {
+              fontSize: "10px",
+              color: colours.mutedForeground
+            }
+          }, `${data.value.toLocaleString()} (${percentage}%)`)
+        ])
+      ]);
+    }
+    return null;
+  };
+
+  // Desktop/Tablet tooltip component
+  const DesktopTooltip = ({ active, payload }) => {
     if (active && payload && payload.length) {
       const data = payload[0];
       return React.createElement('div', {
@@ -242,10 +393,10 @@ const PaymentsPieChart = ({
           backgroundColor: colours.background,
           border: `1px solid ${colours.border}`,
           borderRadius: "8px",
-          padding: isMobile ? "8px" : "12px",
+          padding: isTablet ? "10px" : "12px",
           boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-          fontSize: isMobile ? "12px" : "14px",
-          minWidth: isMobile ? "120px" : "150px",
+          fontSize: isTablet ? "13px" : "14px",
+          minWidth: isTablet ? "130px" : "150px",
           fontFamily: "Arial, sans-serif"
         }
       }, [
@@ -278,7 +429,7 @@ const PaymentsPieChart = ({
           React.createElement('span', {
             key: 'text',
             style: {
-              fontSize: isMobile ? "11px" : "13px",
+              fontSize: isTablet ? "12px" : "13px",
               color: colours.mutedForeground,
               display: "flex",
               alignItems: "center"
@@ -298,6 +449,61 @@ const PaymentsPieChart = ({
       ]);
     }
     return null;
+  };
+
+  // Responsive chart renderer
+  const renderResponsiveChart = () => {
+    const config = getResponsiveConfig();
+    
+    return React.createElement(ResponsiveContainer, {
+      width: config.width,
+      height: config.height
+    }, React.createElement(RechartsPieChart, {
+      margin: config.margin
+    }, [
+      React.createElement(Pie, {
+        key: 'pie',
+        data: config.data,
+        cx: "50%",
+        cy: "50%",
+        labelLine: false,
+        label: config.showLabels ? renderDesktopCustomLabel : false,
+        outerRadius: config.outerRadius,
+        innerRadius: config.innerRadius,
+        fill: "#8884d8",
+        dataKey: "value",
+        paddingAngle: config.paddingAngle,
+        onMouseEnter: (_, index) => setHoveredIndex(index),
+        onMouseLeave: () => setHoveredIndex(null)
+      }, config.data.map((entry, index) =>
+        React.createElement(Cell, {
+          key: `cell-${index}`,
+          fill: entry.color,
+          stroke: hoveredIndex === index ? colours.foreground : 'none',
+          strokeWidth: hoveredIndex === index ? 2 : 0,
+          style: {
+            filter: hoveredIndex === index ? 'brightness(1.1)' : 'none',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }
+        })
+      )),
+      React.createElement(Tooltip, {
+        key: 'tooltip',
+        content: isMobile ? React.createElement(MobileTooltip) : React.createElement(DesktopTooltip)
+      }),
+      config.showLegend && React.createElement(Legend, {
+        key: 'legend',
+        wrapperStyle: {
+          paddingTop: isMobile ? "10px" : isTablet ? "15px" : "20px",
+          fontSize: isMobile ? "10px" : isTablet ? "11px" : "13px",
+          color: colours.mutedForeground,
+          fontFamily: "Arial, sans-serif"
+        },
+        iconType: isMobile ? "circle" : "rect",
+        layout: config.legendLayout
+      })
+    ]));
   };
 
   // Notes modal
@@ -425,13 +631,9 @@ const PaymentsPieChart = ({
     ]));
   };
 
-  const pieData = getPieData();
-  const innerRadius = showInnerRadius ? (isMobile ? 40 : 60) : 0;
-  const outerRadius = isMobile ? 80 : 120;
-
   return React.createElement(React.Fragment, null, [
     React.createElement('div', {
-      key: 'chart-container',
+      key: `chart-container-${chartKey}`, // Force re-render on breakpoint change
       style: {
         backgroundColor: colours.card,
         border: `1px solid ${colours.border}`,
@@ -447,7 +649,7 @@ const PaymentsPieChart = ({
       React.createElement('div', {
         key: 'header',
         style: {
-          padding: isMobile ? "16px 16px 0 16px" : "24px 24px 0 24px",
+          padding: isMobile ? "16px 16px 0 16px" : isTablet ? "20px 20px 0 20px" : "24px 24px 0 24px",
           display: "flex",
           alignItems: "flex-start",
           justifyContent: "space-between",
@@ -466,7 +668,7 @@ const PaymentsPieChart = ({
             key: 'title',
             style: {
               margin: "0 0 2px 0",
-              fontSize: isMobile ? "16px" : "18px",
+              fontSize: isMobile ? "16px" : isTablet ? "17px" : "18px",
               fontWeight: "600",
               color: colours.foreground,
               lineHeight: "1.25",
@@ -477,7 +679,7 @@ const PaymentsPieChart = ({
             key: 'subtitle',
             style: {
               margin: "0",
-              fontSize: isMobile ? "12px" : "14px",
+              fontSize: isMobile ? "12px" : isTablet ? "13px" : "14px",
               color: colours.mutedForeground,
               fontWeight: "400"
             }
@@ -499,7 +701,7 @@ const PaymentsPieChart = ({
           src: "https://res.cloudinary.com/dmlmugaye/image/upload/v1754492437/PA_Logo_Black_xlb4mj.svg",
           alt: "The Payments Association",
           style: {
-            height: isMobile ? "30px" : "40px",
+            height: isMobile ? "30px" : isTablet ? "35px" : "40px",
             width: "auto",
             maxWidth: "100%"
           }
@@ -510,72 +712,19 @@ const PaymentsPieChart = ({
       React.createElement('div', {
         key: 'chart',
         style: {
-          padding: isMobile ? "16px" : "24px",
+          padding: isMobile ? "16px" : isTablet ? "20px" : "24px",
           backgroundColor: colours.cardTint,
           boxSizing: "border-box"
         }
-      }, React.createElement(ResponsiveContainer, {
-        width: width,
-        height: height
-      }, React.createElement(RechartsPieChart, {
-        margin: {
-          top: isMobile ? 20 : 30,
-          right: isMobile ? 60 : 80,
-          bottom: isMobile ? 20 : 30,
-          left: isMobile ? 60 : 80
-        }
-      }, [
-        React.createElement(Pie, {
-          key: 'pie',
-          data: pieData,
-          cx: "50%",
-          cy: "50%",
-          labelLine: false,
-          label: renderCustomLabel,
-          outerRadius: outerRadius,
-          innerRadius: innerRadius,
-          fill: "#8884d8",
-          dataKey: "value",
-          paddingAngle: 1,
-          onMouseEnter: (_, index) => setHoveredIndex(index),
-          onMouseLeave: () => setHoveredIndex(null)
-        }, pieData.map((entry, index) =>
-          React.createElement(Cell, {
-            key: `cell-${index}`,
-            fill: entry.color,
-            stroke: hoveredIndex === index ? colours.foreground : 'none',
-            strokeWidth: hoveredIndex === index ? 2 : 0,
-            style: {
-              filter: hoveredIndex === index ? 'brightness(1.1)' : 'none',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease'
-            }
-          })
-        )),
-        React.createElement(Tooltip, {
-          key: 'tooltip',
-          content: React.createElement(CustomTooltip)
-        }),
-        showLegend && !showLabels && React.createElement(Legend, {
-          key: 'legend',
-          wrapperStyle: {
-            paddingTop: isMobile ? "12px" : "20px",
-            fontSize: isMobile ? "11px" : "13px",
-            color: colours.mutedForeground,
-            fontFamily: "Arial, sans-serif"
-          },
-          iconType: "rect",
-          layout: "horizontal"
-        })
-      ]))),
+      }, renderResponsiveChart()),
 
       // Footer
       React.createElement('div', {
         key: 'footer',
         style: {
-          padding: isMobile ? "0 16px 16px 16px" : "0 24px 20px 24px",
+          padding: isMobile ? "0 16px 16px 16px" : isTablet ? "0 20px 18px 20px" : "0 24px 20px 24px",
           borderTop: `1px solid ${colours.border}`,
-          paddingTop: isMobile ? "12px" : "16px",
+          paddingTop: isMobile ? "12px" : isTablet ? "14px" : "16px",
           backgroundColor: colours.card,
           boxSizing: "border-box"
         }
@@ -604,7 +753,7 @@ const PaymentsPieChart = ({
             rel: "noopener noreferrer",
             style: {
               margin: "0",
-              fontSize: isMobile ? "10px" : "12px",
+              fontSize: isMobile ? "10px" : isTablet ? "11px" : "12px",
               color: colours.mutedForeground,
               fontWeight: "400",
               textDecoration: "underline",
@@ -620,7 +769,7 @@ const PaymentsPieChart = ({
             key: 'source',
             style: {
               margin: "0",
-              fontSize: isMobile ? "10px" : "12px",
+              fontSize: isMobile ? "10px" : isTablet ? "11px" : "12px",
               color: colours.mutedForeground,
               fontWeight: "400"
             }
@@ -629,7 +778,7 @@ const PaymentsPieChart = ({
             key: 'chart-info',
             style: {
               margin: "0",
-              fontSize: isMobile ? "10px" : "12px",
+              fontSize: isMobile ? "10px" : isTablet ? "11px" : "12px",
               color: colours.mutedForeground,
               fontWeight: "400"
             }
@@ -663,7 +812,7 @@ const PaymentsPieChart = ({
             key: 'text',
             style: {
               margin: "0",
-              fontSize: isMobile ? "9px" : "11px",
+              fontSize: isMobile ? "9px" : isTablet ? "10px" : "11px",
               color: colours.mutedForeground,
               fontWeight: "400"
             }
@@ -700,133 +849,133 @@ if (typeof window !== 'undefined') {
     if (!container) {
       console.error(`Container with ID ${containerId} not found`);
       return;
-    }
+   }
 
-    try {
-      // Check React availability
-      if (typeof React === 'undefined') {
-        throw new Error('React is not available. Please load React before the chart library.');
-      }
-      
-      if (typeof ReactDOM === 'undefined') {
-        throw new Error('ReactDOM is not available. Please load ReactDOM before the chart library.');
-      }
+   try {
+     // Check React availability
+     if (typeof React === 'undefined') {
+       throw new Error('React is not available. Please load React before the chart library.');
+     }
+     
+     if (typeof ReactDOM === 'undefined') {
+       throw new Error('ReactDOM is not available. Please load ReactDOM before the chart library.');
+     }
 
-      const data = options.data || samplePaymentsPieData;
+     const data = options.data || samplePaymentsPieData;
 
-      // Try modern React 18+ createRoot first, fallback to legacy render
-      if (ReactDOM.createRoot) {
-        console.log('Using React 18+ createRoot for Pie Chart');
-        const root = ReactDOM.createRoot(container);
-        root.render(
-          React.createElement(PaymentsPieChart, {
-            data: data,
-            width: options.width,
-            height: options.height,
-            title: options.title,
-            showLogo: options.showLogo,
-            className: options.className,
-            sourceText: options.sourceText,
-            sourceUrl: options.sourceUrl,
-            notesDescription: options.notesDescription,
-            showInnerRadius: options.showInnerRadius,
-            showLabels: options.showLabels,
-            showLegend: options.showLegend,
-          })
-        );
-      } else if (ReactDOM.render) {
-        console.log('Using legacy ReactDOM.render for Pie Chart');
-        ReactDOM.render(
-          React.createElement(PaymentsPieChart, {
-            data: data,
-            width: options.width,
-            height: options.height,
-            title: options.title,
-            showLogo: options.showLogo,
-            className: options.className,
-            sourceText: options.sourceText,
-            sourceUrl: options.sourceUrl,
-            notesDescription: options.notesDescription,
-            showInnerRadius: options.showInnerRadius,
-            showLabels: options.showLabels,
-            showLegend: options.showLegend,
-          }),
-          container
-        );
-      } else {
-        throw new Error('No suitable React render method found');
-      }
+     // Try modern React 18+ createRoot first, fallback to legacy render
+     if (ReactDOM.createRoot) {
+       console.log('Using React 18+ createRoot for Pie Chart');
+       const root = ReactDOM.createRoot(container);
+       root.render(
+         React.createElement(PaymentsPieChart, {
+           data: data,
+           width: options.width,
+           height: options.height,
+           title: options.title,
+           showLogo: options.showLogo,
+           className: options.className,
+           sourceText: options.sourceText,
+           sourceUrl: options.sourceUrl,
+           notesDescription: options.notesDescription,
+           showInnerRadius: options.showInnerRadius,
+           showLabels: options.showLabels,
+           showLegend: options.showLegend,
+         })
+       );
+     } else if (ReactDOM.render) {
+       console.log('Using legacy ReactDOM.render for Pie Chart');
+       ReactDOM.render(
+         React.createElement(PaymentsPieChart, {
+           data: data,
+           width: options.width,
+           height: options.height,
+           title: options.title,
+           showLogo: options.showLogo,
+           className: options.className,
+           sourceText: options.sourceText,
+           sourceUrl: options.sourceUrl,
+           notesDescription: options.notesDescription,
+           showInnerRadius: options.showInnerRadius,
+           showLabels: options.showLabels,
+           showLegend: options.showLegend,
+         }),
+         container
+       );
+     } else {
+       throw new Error('No suitable React render method found');
+     }
 
-      console.log('Pie chart rendered successfully');
-    } catch (error) {
-      console.error('Error rendering pie chart:', error);
-      container.innerHTML = `
-        <div style="
-          color: #ef4444; 
-          background: #fef2f2; 
-          padding: 20px; 
-          border-radius: 8px; 
-          border: 1px solid #fecaca;
-          font-family: ui-sans-serif, system-ui, sans-serif;
-        ">
-          <h4 style="margin: 0 0 8px 0; font-size: 16px;">Pie Chart Loading Error</h4>
-          <p style="margin: 0; font-size: 14px;">${error.message}</p>
-        </div>
-      `;
-    }
-  };
+     console.log('Pie chart rendered successfully');
+   } catch (error) {
+     console.error('Error rendering pie chart:', error);
+     container.innerHTML = `
+       <div style="
+         color: #ef4444; 
+         background: #fef2f2; 
+         padding: 20px; 
+         border-radius: 8px; 
+         border: 1px solid #fecaca;
+         font-family: ui-sans-serif, system-ui, sans-serif;
+       ">
+         <h4 style="margin: 0 0 8px 0; font-size: 16px;">Pie Chart Loading Error</h4>
+         <p style="margin: 0; font-size: 14px;">${error.message}</p>
+       </div>
+     `;
+   }
+ };
 
-  // Set this as the main render method if no other chart has claimed it
-  if (!window.PaymentsCharts.render) {
-    window.PaymentsCharts.render = window.PaymentsCharts.renderPieChart;
-  }
-  
-  console.log('PaymentsCharts Pie setup complete. Available methods:', Object.keys(window.PaymentsCharts));
+ // Set this as the main render method if no other chart has claimed it
+ if (!window.PaymentsCharts.render) {
+   window.PaymentsCharts.render = window.PaymentsCharts.renderPieChart;
+ }
+ 
+ console.log('PaymentsCharts Pie setup complete. Available methods:', Object.keys(window.PaymentsCharts));
 }
 
 // Auto-render functionality for pie charts
 if (typeof document !== 'undefined') {
-  document.addEventListener("DOMContentLoaded", function () {
-    console.log('DOM loaded, looking for auto-render pie charts');
-    const chartContainers = document.querySelectorAll("[data-payments-pie-chart]");
-    
-    if (chartContainers.length === 0) {
-      console.log('No auto-render pie chart containers found');
-      return;
-    }
+ document.addEventListener("DOMContentLoaded", function () {
+   console.log('DOM loaded, looking for auto-render pie charts');
+   const chartContainers = document.querySelectorAll("[data-payments-pie-chart]");
+   
+   if (chartContainers.length === 0) {
+     console.log('No auto-render pie chart containers found');
+     return;
+   }
 
-    console.log(`Found ${chartContainers.length} pie chart containers for auto-render`);
-    
-    chartContainers.forEach((container) => {
-      try {
-        const chartData = container.getAttribute("data-chart-data");
-        const chartTitle = container.getAttribute("data-chart-title");
-        const showLogo = container.getAttribute("data-show-logo") !== "false";
-        const sourceText = container.getAttribute("data-source-text");
-        const sourceUrl = container.getAttribute("data-source-url");
-        const notesDescription = container.getAttribute("data-notes-description");
-        const showInnerRadius = container.getAttribute("data-show-inner-radius") === "true";
-        const showLabels = container.getAttribute("data-show-labels") !== "false";
-        const showLegend = container.getAttribute("data-show-legend") !== "false";
+   console.log(`Found ${chartContainers.length} pie chart containers for auto-render`);
+   
+   chartContainers.forEach((container) => {
+     try {
+       const chartData = container.getAttribute("data-chart-data");
+       const chartTitle = container.getAttribute("data-chart-title");
+       const showLogo = container.getAttribute("data-show-logo") !== "false";
+       const sourceText = container.getAttribute("data-source-text");
+       const sourceUrl = container.getAttribute("data-source-url");
+       const notesDescription = container.getAttribute("data-notes-description");
+       const showInnerRadius = container.getAttribute("data-show-inner-radius") === "true";
+       const showLabels = container.getAttribute("data-show-labels") !== "false";
+       const showLegend = container.getAttribute("data-show-legend") !== "false";
 
-        if (window.PaymentsCharts && window.PaymentsCharts.renderPieChart) {
-          window.PaymentsCharts.renderPieChart(container.id, {
-            data: chartData ? JSON.parse(chartData) : undefined,
-            title: chartTitle,
-            showLogo: showLogo,
-            sourceText: sourceText,
-            sourceUrl: sourceUrl,
-            notesDescription: notesDescription,
-            showInnerRadius: showInnerRadius,
-            showLabels: showLabels,
-            showLegend: showLegend,
-          });
-        }
-      } catch (error) {
-        console.error('Error in auto-render for pie chart container:', container.id, error);
-      }
-    });
-  });
+       if (window.PaymentsCharts && window.PaymentsCharts.renderPieChart) {
+         window.PaymentsCharts.renderPieChart(container.id, {
+           data: chartData ? JSON.parse(chartData) : undefined,
+           title: chartTitle,
+           showLogo: showLogo,
+           sourceText: sourceText,
+           sourceUrl: sourceUrl,
+           notesDescription: notesDescription,
+           showInnerRadius: showInnerRadius,
+           showLabels: showLabels,
+           showLegend: showLegend,
+         });
+       }
+     } catch (error) {
+       console.error('Error in auto-render for pie chart container:', container.id, error);
+     }
+   });
+ });
 }
 
 export default PaymentsPieChart;

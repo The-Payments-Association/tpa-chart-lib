@@ -1,0 +1,104 @@
+<div id="payments-chart-pie" style="width: 100%; height: 400px; margin: 20px 0;"></div>
+
+<script>
+// Simple library loader - IGNORE THIS SECTION
+(function() {
+  if (window.PaymentsCharts) { renderCharts(); return; }
+  
+  const scripts = [
+    'https://unpkg.com/react@18/umd/react.production.min.js',
+    'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js', 
+    'https://nimble-starlight-bed049.netlify.app/pie-payments-charts.min.js'
+  ];
+  
+  let loaded = 0;
+  scripts.forEach(src => {
+    const script = document.createElement('script');
+    script.src = src;
+    script.onload = () => { if (++loaded === scripts.length) setTimeout(renderCharts, 100); };
+    document.head.appendChild(script);
+  });
+})();
+
+function renderCharts() {
+  // ======================================
+  // PIE CHART DATA EXAMPLES - Choose one below
+  // ======================================
+  
+  // PAYMENT METHODS DISTRIBUTION
+  const paymentMethodsData = [
+    { name: "Card payments", volume: 145000 },
+    { name: "Bank transfers", volume: 89000 },
+    { name: "Digital wallets", volume: 67000 },
+    { name: "Direct debit", volume: 34000 },
+    { name: "Cash", volume: 12000 },
+    { name: "Cheques", volume: 3000 }
+  ];
+
+  // TRANSACTION VALUES BY SECTOR
+  const sectorValueData = [
+    { name: "Retail", value: 2500000 },
+    { name: "E-commerce", value: 1800000 },
+    { name: "Financial services", value: 1200000 },
+    { name: "Healthcare", value: 850000 },
+    { name: "Government", value: 600000 }
+  ];
+
+  // REGIONAL PAYMENT DISTRIBUTION
+  const regionalData = [
+    { name: "London", volume: 450000 },
+    { name: "South East", volume: 320000 },
+    { name: "North West", volume: 280000 },
+    { name: "Midlands", volume: 240000 },
+    { name: "Scotland", volume: 180000 },
+    { name: "Wales", volume: 120000 },
+    { name: "North East", volume: 95000 },
+    { name: "South West", volume: 185000 }
+  ];
+
+  // CUSTOMER SEGMENTS
+  const customerSegmentData = [
+    { name: "Enterprise", revenue: 3200000 },
+    { name: "SME", revenue: 1800000 },
+    { name: "Startups", revenue: 950000 },
+    { name: "Non-profit", revenue: 450000 }
+  ];
+
+  // TRANSACTION SIZE DISTRIBUTION
+  const transactionSizeData = [
+    { name: "£0-10", count: 125000 },
+    { name: "£10-50", count: 89000 },
+    { name: "£50-100", count: 45000 },
+    { name: "£100-500", count: 32000 },
+    { name: "£500+", count: 18000 }
+  ];
+
+  // ======================================
+  // CHART CONFIGURATION
+  // ======================================
+  
+  window.PaymentsCharts.renderPieChart('payments-chart-pie', {
+
+    // DATA: Choose one from above examples
+    data: paymentMethodsData, // Payment methods distribution
+    
+    // CHART SETTINGS
+    title: 'Payment Methods Distribution',
+    showLogo: true, // Set to false to hide logo
+    width: '100%',
+    height: 400,
+    
+    // PIE CHART SPECIFIC OPTIONS
+    showInnerRadius: false, // Set to true for donut chart
+    showLabels: true, // Set to false to hide slice labels
+    showLegend: true, // Set to false to hide legend (only when showLabels is false)
+    
+    // SOURCE INFORMATION
+    sourceText: 'UK Finance payment method statistics',
+    sourceUrl: 'https://www.ukfinance.org.uk/data-and-research/payment-statistics',
+    
+    // NOTES (Optional - leave blank or remove for no notes icon)
+    notesDescription: 'This pie chart shows the distribution of payment methods used in UK transactions. Data represents transaction volumes across different payment channels.',
+  });
+}
+</script>

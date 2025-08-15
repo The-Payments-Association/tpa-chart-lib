@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Test Minified Line Chart</title>
+    <title>Test Minified Pie Chart</title>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -34,23 +34,28 @@
     </style>
 </head>
 <body>
-    <h1>Minified Line Chart Test</h1>
+    <h1>Minified Pie Chart Test</h1>
     
     <div class="debug-info" id="debug-info">Loading dependencies...</div>
 
     <div class="test-container">
-        <h2>Test 1: Single Line Chart</h2>
+        <h2>Test 1: Standard Pie Chart</h2>
         <div id="chart-1" class="chart-container"></div>
     </div>
 
     <div class="test-container">
-        <h2>Test 2: Multi-Line Chart</h2>
+        <h2>Test 2: Donut Chart (Inner Radius)</h2>
         <div id="chart-2" class="chart-container"></div>
     </div>
 
     <div class="test-container">
-        <h2>Test 3: Large Dataset (Mobile Pagination)</h2>
+        <h2>Test 3: Large Dataset (8 Slices)</h2>
         <div id="chart-3" class="chart-container"></div>
+    </div>
+
+    <div class="test-container">
+        <h2>Test 4: No Labels + Legend</h2>
+        <div id="chart-4" class="chart-container"></div>
     </div>
 
     <!-- Load React 18 -->
@@ -74,11 +79,11 @@
         log('');
     </script>
     
-    <!-- Load your actual minified line chart library -->
-    <script src="./dist/line-payments-charts.min.js"></script>
+    <!-- Load your actual minified pie chart library -->
+    <script src="./dist/pie-payments-charts.min.js"></script>
     
     <script>
-        // Wait a moment for the script to load, then testhttp://192.168.1.245:3000
+        // Wait a moment for the script to load, then test
         setTimeout(function() {
             log('📦 Checking PaymentsCharts after load...');
             log('window.PaymentsCharts type: ' + typeof window.PaymentsCharts);
@@ -86,7 +91,7 @@
             if (window.PaymentsCharts) {
                 log('PaymentsCharts object keys: ' + Object.keys(window.PaymentsCharts).join(', '));
                 log('PaymentsCharts.render type: ' + typeof window.PaymentsCharts.render);
-                log('PaymentsCharts.renderLineChart type: ' + typeof window.PaymentsCharts.renderLineChart);
+                log('PaymentsCharts.renderPieChart type: ' + typeof window.PaymentsCharts.renderPieChart);
             } else {
                 log('❌ window.PaymentsCharts is not available');
             }
@@ -97,115 +102,154 @@
         }, 500);
 
         function runChartTests() {
-            log('🚀 Starting line chart tests...');
+            log('🚀 Starting pie chart tests...');
             
-            // Test data
-            const singleLineData = [
-                { name: "Q1 2024", volume: 145000 },
-                { name: "Q2 2024", volume: 162000 },
-                { name: "Q3 2024", volume: 158000 },
-                { name: "Q4 2024", volume: 171000 }
+            // Test data - Payment Methods Distribution
+            const paymentMethodsData = [
+                { name: "Card payments", volume: 145000 },
+                { name: "Bank transfers", volume: 89000 },
+                { name: "Digital wallets", volume: 67000 },
+                { name: "Direct debit", volume: 34000 },
+                { name: "Cash", volume: 12000 },
+                { name: "Cheques", volume: 3000 }
             ];
 
-            const multiLineData = [
-                { name: "Q1 2024", volume: 145000, value: 32060 },
-                { name: "Q2 2024", volume: 162000, value: 42150 },
-                { name: "Q3 2024", volume: 158000, value: 43320 },
-                { name: "Q4 2024", volume: 171000, value: 46840 }
+            // Test data - Sector Values
+            const sectorValueData = [
+                { name: "Retail", value: 2500000 },
+                { name: "E-commerce", value: 1800000 },
+                { name: "Financial services", value: 1200000 },
+                { name: "Healthcare", value: 850000 },
+                { name: "Government", value: 600000 }
             ];
 
-            const largeDataset = [
-                { name: "Jan 2024", volume: 145000, value: 32060 },
-                { name: "Feb 2024", volume: 162000, value: 42150 },
-                { name: "Mar 2024", volume: 158000, value: 43320 },
-                { name: "Apr 2024", volume: 171000, value: 46840 },
-                { name: "May 2024", volume: 189000, value: 51200 },
-                { name: "Jun 2024", volume: 203000, value: 56780 },
-                { name: "Jul 2024", volume: 195000, value: 54300 },
-                { name: "Aug 2024", volume: 187000, value: 52100 },
-                { name: "Sep 2024", volume: 201000, value: 58200 },
-                { name: "Oct 2024", volume: 215000, value: 61800 },
-                { name: "Nov 2024", volume: 208000, value: 59400 },
-                { name: "Dec 2024", volume: 225000, value: 65000 }
+            // Test data - Regional Distribution (8 slices)
+            const regionalData = [
+                { name: "London", volume: 450000 },
+                { name: "South East", volume: 320000 },
+                { name: "North West", volume: 280000 },
+                { name: "Midlands", volume: 240000 },
+                { name: "Scotland", volume: 180000 },
+                { name: "Wales", volume: 120000 },
+                { name: "North East", volume: 95000 },
+                { name: "South West", volume: 185000 }
             ];
 
-            // Test 1: Single line chart
-            log('📈 Testing single line chart...');
+            // Test data - Simple 4 slice
+            const customerSegmentData = [
+                { name: "Enterprise", revenue: 3200000 },
+                { name: "SME", revenue: 1800000 },
+                { name: "Startups", revenue: 950000 },
+                { name: "Non-profit", revenue: 450000 }
+            ];
+
+            // Test 1: Standard pie chart
+            log('🥧 Testing standard pie chart...');
             try {
-                if (window.PaymentsCharts && window.PaymentsCharts.renderLineChart) {
-                    window.PaymentsCharts.renderLineChart('chart-1', {
-                        data: singleLineData,
-                        title: 'Single Line Test Chart',
+                if (window.PaymentsCharts && window.PaymentsCharts.renderPieChart) {
+                    window.PaymentsCharts.renderPieChart('chart-1', {
+                        data: paymentMethodsData,
+                        title: 'Payment Methods Distribution',
                         height: 400,
-                        sourceText: 'Test data source'
+                        sourceText: 'UK Finance payment statistics',
+                        showInnerRadius: false,
+                        showLabels: true,
+                        showLegend: true
                     });
-                    log('✅ Single line chart render called successfully');
+                    log('✅ Standard pie chart render called successfully');
                 } else if (window.PaymentsCharts && window.PaymentsCharts.render) {
                     // Fallback to generic render method
                     window.PaymentsCharts.render('chart-1', {
-                        data: singleLineData,
-                        title: 'Single Line Test Chart (fallback)',
+                        data: paymentMethodsData,
+                        title: 'Payment Methods Distribution (fallback)',
                         height: 400,
-                        sourceText: 'Test data source'
+                        sourceText: 'UK Finance payment statistics'
                     });
-                    log('✅ Single line chart render called successfully (fallback)');
+                    log('✅ Standard pie chart render called successfully (fallback)');
                 } else {
-                    log('❌ PaymentsCharts.renderLineChart not available');
-                    document.getElementById('chart-1').innerHTML = '<p style="color: red;">PaymentsCharts.renderLineChart not available</p>';
+                    log('❌ PaymentsCharts.renderPieChart not available');
+                    document.getElementById('chart-1').innerHTML = '<p style="color: red;">PaymentsCharts.renderPieChart not available</p>';
                 }
             } catch (error) {
-                log('💥 Single line chart error: ' + error.message);
+                log('💥 Standard pie chart error: ' + error.message);
                 document.getElementById('chart-1').innerHTML = '<p style="color: red;">Error: ' + error.message + '</p>';
             }
 
-            // Test 2: Multi-line chart
+            // Test 2: Donut chart (inner radius)
             setTimeout(() => {
-                log('📈 Testing multi-line chart...');
+                log('🍩 Testing donut chart (inner radius)...');
                 try {
-                    if (window.PaymentsCharts && window.PaymentsCharts.renderLineChart) {
-                        window.PaymentsCharts.renderLineChart('chart-2', {
-                            data: multiLineData,
-                            title: 'Multi-Line Test Chart',
+                    if (window.PaymentsCharts && window.PaymentsCharts.renderPieChart) {
+                        window.PaymentsCharts.renderPieChart('chart-2', {
+                            data: sectorValueData,
+                            title: 'Transaction Values by Sector',
                             height: 400,
-                            sourceText: 'Test data source',
-                            fieldLabels: {
-                                volume: 'Payment Volume',
-                                value: 'Transaction Value (£m)'
-                            }
+                            sourceText: 'Industry sector analysis',
+                            showInnerRadius: true, // This creates the donut effect
+                            showLabels: true,
+                            showLegend: false
                         });
-                        log('✅ Multi-line chart render called successfully');
+                        log('✅ Donut chart render called successfully');
                     } else {
-                        log('❌ PaymentsCharts.renderLineChart not available for second chart');
-                        document.getElementById('chart-2').innerHTML = '<p style="color: red;">PaymentsCharts.renderLineChart not available</p>';
+                        log('❌ PaymentsCharts.renderPieChart not available for donut chart');
+                        document.getElementById('chart-2').innerHTML = '<p style="color: red;">PaymentsCharts.renderPieChart not available</p>';
                     }
                 } catch (error) {
-                    log('💥 Multi-line chart error: ' + error.message);
+                    log('💥 Donut chart error: ' + error.message);
                     document.getElementById('chart-2').innerHTML = '<p style="color: red;">Error: ' + error.message + '</p>';
                 }
             }, 1000);
 
-            // Test 3: Large dataset
+            // Test 3: Large dataset (8 slices)
             setTimeout(() => {
-                log('📈 Testing large dataset with pagination...');
+                log('🥧 Testing large dataset (8 slices)...');
                 try {
-                    if (window.PaymentsCharts && window.PaymentsCharts.renderLineChart) {
-                        window.PaymentsCharts.renderLineChart('chart-3', {
-                            data: largeDataset,
-                            title: 'Large Dataset Test (12 Months)',
+                    if (window.PaymentsCharts && window.PaymentsCharts.renderPieChart) {
+                        window.PaymentsCharts.renderPieChart('chart-3', {
+                            data: regionalData,
+                            title: 'Regional Payment Distribution',
                             height: 400,
-                            sourceText: 'Test data source - monthly data',
-                            notesDescription: 'This chart demonstrates mobile pagination for large datasets. On mobile devices, this will show pagination controls.'
+                            sourceText: 'UK regional payment data',
+                            showInnerRadius: false,
+                            showLabels: true,
+                            showLegend: false,
+                            notesDescription: 'This chart shows payment distribution across UK regions. Some smaller slices may not show labels if they represent less than 3% of the total.'
                         });
                         log('✅ Large dataset chart render called successfully');
                     } else {
-                        log('❌ PaymentsCharts.renderLineChart not available for third chart');
-                        document.getElementById('chart-3').innerHTML = '<p style="color: red;">PaymentsCharts.renderLineChart not available</p>';
+                        log('❌ PaymentsCharts.renderPieChart not available for large dataset');
+                        document.getElementById('chart-3').innerHTML = '<p style="color: red;">PaymentsCharts.renderPieChart not available</p>';
                     }
                 } catch (error) {
                     log('💥 Large dataset chart error: ' + error.message);
                     document.getElementById('chart-3').innerHTML = '<p style="color: red;">Error: ' + error.message + '</p>';
                 }
             }, 2000);
+
+            // Test 4: No labels + legend
+            setTimeout(() => {
+                log('📊 Testing chart with legend instead of labels...');
+                try {
+                    if (window.PaymentsCharts && window.PaymentsCharts.renderPieChart) {
+                        window.PaymentsCharts.renderPieChart('chart-4', {
+                            data: customerSegmentData,
+                            title: 'Customer Segments by Revenue',
+                            height: 400,
+                            sourceText: 'Customer segmentation analysis',
+                            showInnerRadius: true,
+                            showLabels: false, // Hide labels
+                            showLegend: true   // Show legend instead
+                        });
+                        log('✅ Legend-based chart render called successfully');
+                    } else {
+                        log('❌ PaymentsCharts.renderPieChart not available for legend chart');
+                        document.getElementById('chart-4').innerHTML = '<p style="color: red;">PaymentsCharts.renderPieChart not available</p>';
+                    }
+                } catch (error) {
+                    log('💥 Legend-based chart error: ' + error.message);
+                    document.getElementById('chart-4').innerHTML = '<p style="color: red;">Error: ' + error.message + '</p>';
+                }
+            }, 3000);
         }
 
         // Test direct access
@@ -223,6 +267,12 @@
                 window.dispatchEvent(new Event('resize'));
                 log('📱 Resize event triggered (mobile simulation)');
             }, 100);
+        };
+
+        // Test hover interactions
+        window.testHover = function() {
+            log('🖱️ Hover interactions should work automatically when charts are rendered');
+            log('Try hovering over pie slices to see hover effects and tooltips');
         };
     </script>
 </body>
