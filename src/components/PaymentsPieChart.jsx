@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   PieChart as RechartsPieChart,
   Pie,
@@ -10,6 +10,266 @@ import {
 
 /* eslint-disable no-undef */
 /* global ReactDOM */
+
+// Design system tokens following 2025 best practices
+const designTokens = {
+  // Consistent breakpoints
+  breakpoints: {
+    mobile: 768,
+    tablet: 1024,
+  },
+
+  // Typography scale using rem units
+  typography: {
+    scale: {
+      xs: "0.75rem",
+      sm: "0.875rem",
+      base: "1rem",
+      lg: "1.125rem",
+      xl: "1.25rem",
+      "2xl": "1.5rem",
+      "3xl": "1.875rem",
+    },
+    weight: {
+      normal: "400",
+      medium: "500",
+      semibold: "600",
+    },
+  },
+
+  // Consistent spacing scale
+  spacing: {
+    xs: "0.25rem", // 4px
+    sm: "0.5rem", // 8px
+    md: "0.75rem", // 12px
+    lg: "1rem", // 16px
+    xl: "1.25rem", // 20px
+    "2xl": "1.5rem", // 24px
+    "3xl": "2rem", // 32px
+    "4xl": "2.5rem", // 40px
+  },
+
+// Colour palette
+colours: {
+  primary: "#00dfb8",
+  secondary: "#00573B",
+  tertiary: "#00C29D",
+  quaternary: "#007152",
+  quinary: "#00A783",
+  background: "#ffffff",
+  card: "#fdfffe",
+  cardTint: "#f9fffe",
+  border: "#e2e8f0",
+  foreground: "#0f172a",
+  muted: "#f8fafc",
+  mutedForeground: "#64748b",
+  
+  // Extended segment palette - always green/teal variations
+  segments: [
+    "#00dfb8", // primary - bright teal
+    "#00573B", // secondary - dark green
+    "#00C29D", // tertiary - medium teal
+    "#007152", // quaternary - forest green
+    "#00A783", // quinary - sea green
+    "#10d9c4", // lighter teal
+    "#004d3d", // darker forest green
+    "#00b894", // mint green
+    "#006b5a", // deep green
+    "#00f5d4", // very light teal
+    "#003d32", // very dark green
+    "#009688", // material teal
+    "#20e3c8", // bright light teal
+    "#00453a", // darker emerald
+    "#00d4aa", // medium bright teal
+    "#005947", // dark emerald
+    "#00b896", // sea foam
+    "#003529", // very dark forest
+    "#00e6c7", // pale teal
+    "#004840", // deep emerald
+    "#00c6a4", // soft teal
+    "#002e26", // darkest green
+    "#00f0d8", // lightest teal
+    "#00524a", // emerald shadow
+    "#00af91", // sage green
+    "#002a23", // forest shadow
+    "#00e8d0", // mint cream
+    "#005c52", // deep sage
+    "#009d82", // muted teal
+    "#00241e", // deepest shadow
+  ]
+},
+
+  // Responsive sizing scale
+  sizing: {
+    chart: {
+      mobile: { outer: 100, inner: 0, height: 400 },
+      tablet: { outer: 120, inner: 40, height: 400 },
+      desktop: { outer: 150, inner: 80, height: 450 },
+    },
+    margin: {
+      mobile: { top: 24, right: 24, bottom: 24, left: 24 },
+      tablet: { top: 20, right: 40, bottom: 20, left: 40 },
+      desktop: { top: 32, right: 64, bottom: 32, left: 64 },
+    },
+  },
+};
+
+// Responsive utilities hook
+const useResponsive = () => {
+  const [windowWidth, setWindowWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1200
+  );
+
+  const breakpoint = useMemo(() => {
+    if (windowWidth < designTokens.breakpoints.mobile) return "mobile";
+    if (windowWidth < designTokens.breakpoints.tablet) return "tablet";
+    return "desktop";
+  }, [windowWidth]);
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    const debouncedResize = debounce(handleResize, 150);
+
+    window.addEventListener("resize", debouncedResize);
+    return () => window.removeEventListener("resize", debouncedResize);
+  }, []);
+
+  return {
+    windowWidth,
+    breakpoint,
+    isMobile: breakpoint === "mobile",
+    isTablet: breakpoint === "tablet",
+    isDesktop: breakpoint === "desktop",
+  };
+};
+
+// Utility functions
+const debounce = (func, wait) => {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+};
+
+// Responsive configuration generator
+const getResponsiveConfig = (breakpoint, props) => {
+  const {
+    showInnerRadius = false,
+    showLabels = true,
+    showLegend = true,
+  } = props;
+
+  const sizing = designTokens.sizing.chart[breakpoint];
+  const margin = designTokens.sizing.margin[breakpoint];
+
+  const baseConfig = {
+    width: "100%",
+    height: sizing.height,
+    margin,
+    outerRadius: sizing.outer,
+    innerRadius: showInnerRadius ? sizing.inner : 0,
+    paddingAngle: 0,
+  };
+
+  // Responsive behaviour configuration
+  switch (breakpoint) {
+    case "mobile":
+      return {
+        ...baseConfig,
+        showLabels: false, // Always hide labels on mobile for cleaner look
+        showLegend: true,
+        legendLayout: "horizontal",
+        maxItems: 5, // Group smaller items into "Other"
+      };
+    case "tablet":
+      return {
+        ...baseConfig,
+        showLabels,
+        showLegend: showLegend && !showLabels,
+        legendLayout: "horizontal",
+        maxItems: null,
+      };
+    default: // desktop
+      return {
+        ...baseConfig,
+        showLabels,
+        showLegend: showLegend && !showLabels,
+        legendLayout: "horizontal",
+        maxItems: null,
+      };
+  }
+};
+
+// Style generators using design tokens
+const createStyles = (breakpoint) => {
+  const { typography, spacing, colours } = designTokens;
+
+  return {
+    container: {
+      backgroundColor: colours.card,
+      border: `1px solid ${colours.border}`,
+      borderRadius: spacing.xl,
+      fontFamily: "Arial, sans-serif",
+      overflow: "hidden",
+      width: "100%",
+      boxSizing: "border-box",
+    },
+
+    header: {
+      padding: `${spacing["3xl"]} ${spacing["3xl"]} 0 ${spacing["3xl"]}`,
+      display: "flex",
+      alignItems: "flex-start",
+      justifyContent: "space-between",
+      backgroundColor: colours.cardTint,
+      boxSizing: "border-box",
+    },
+
+    title: {
+      margin: `0 0 ${spacing.xs} 0`,
+      fontSize:
+        breakpoint === "mobile" ? typography.scale["2xl"] : typography.scale.lg,
+      fontWeight: typography.weight.semibold,
+      color: colours.foreground,
+      lineHeight: "1.25",
+      letterSpacing: "-0.025em",
+    },
+
+    subtitle: {
+      margin: "0",
+      fontSize:
+        breakpoint === "mobile" ? typography.scale.lg : typography.scale.sm,
+      color: colours.mutedForeground,
+      fontWeight: typography.weight.normal,
+    },
+
+    chartSection: {
+      padding: spacing["3xl"],
+      backgroundColor: colours.cardTint,
+      boxSizing: "border-box",
+    },
+
+    footer: {
+      padding: `0 ${spacing["3xl"]} ${spacing["3xl"]} ${spacing["3xl"]}`,
+      borderTop: `1px solid ${colours.border}`,
+      paddingTop: spacing["2xl"],
+      backgroundColor: colours.card,
+      boxSizing: "border-box",
+    },
+
+    // Typography utilities
+    text: {
+      xs: { fontSize: typography.scale.xs },
+      sm: { fontSize: typography.scale.sm },
+      base: { fontSize: typography.scale.base },
+      lg: { fontSize: typography.scale.lg },
+    },
+  };
+};
 
 const PaymentsPieChart = ({
   data,
@@ -25,55 +285,20 @@ const PaymentsPieChart = ({
   showLabels = true,
   showLegend = true,
 }) => {
-  const [windowWidth, setWindowWidth] = useState(
-    typeof window !== "undefined" ? window.innerWidth : 1200
-  );
+  const { breakpoint, isMobile } = useResponsive();
   const [chartKey, setChartKey] = useState(0);
   const [showNotesModal, setShowNotesModal] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState(null);
 
-  const isMobile = windowWidth < 768;
-  const isTablet = windowWidth >= 768 && windowWidth < 1024;
-
-  // Debounce utility function
-  const debounce = (func, wait) => {
-    let timeout;
-    return function executedFunction(...args) {
-      const later = () => {
-        clearTimeout(timeout);
-        func(...args);
-      };
-      clearTimeout(timeout);
-      timeout = setTimeout(later, wait);
-    };
-  };
-
-  // Responsive event listener with breakpoint detection
+  // Force re-render on breakpoint change for smooth transitions
   useEffect(() => {
-    const handleResize = () => {
-      const newWidth = window.innerWidth;
-      const previousBreakpoint = windowWidth < 768 ? 'mobile' : windowWidth < 1024 ? 'tablet' : 'desktop';
-      const currentBreakpoint = newWidth < 768 ? 'mobile' : newWidth < 1024 ? 'tablet' : 'desktop';
-      
-      setWindowWidth(newWidth);
-      
-      // Force complete re-render when breakpoint changes
-      if (previousBreakpoint !== currentBreakpoint) {
-        setChartKey(prev => prev + 1);
-      }
-    };
-
-    const debouncedResize = debounce(handleResize, 150);
-    window.addEventListener("resize", debouncedResize);
-    return () => window.removeEventListener("resize", debouncedResize);
-  }, [windowWidth]);
+    setChartKey((prev) => prev + 1);
+  }, [breakpoint]);
 
   // Modal keyboard handling
   useEffect(() => {
     const handleEscape = (e) => {
-      if (e.key === "Escape") {
-        setShowNotesModal(false);
-      }
+      if (e.key === "Escape") setShowNotesModal(false);
     };
 
     if (showNotesModal) {
@@ -89,895 +314,864 @@ const PaymentsPieChart = ({
     };
   }, [showNotesModal]);
 
-  const colours = {
-    primary: "#00dfb8",
-    secondary: "#00573B",
-    tertiary: "#00C29D",
-    quaternary: "#007152",
-    quinary: "#00A783",
-    background: "#ffffff",
-    card: "#fdfffe",
-    cardTint: "#f9fffe",
-    border: "#e2e8f0",
-    foreground: "#0f172a",
-    muted: "#f8fafc",
-    mutedForeground: "#64748b",
-    grid: "#f1f5f9",
+const pieColours = designTokens.colours.segments;
+
+
+  // Add this CSS injection at the top of your component file
+  const injectLabelStyles = () => {
+    if (
+      typeof document !== "undefined" &&
+      !document.getElementById("pie-chart-label-styles")
+    ) {
+      const style = document.createElement("style");
+      style.id = "pie-chart-label-styles";
+      style.textContent = `
+      .pie-label-group {
+        transition: opacity 0.3s ease-in-out;
+        opacity: 1;
+      }
+      .pie-label-group.faded {
+        opacity: 0.3;
+      }
+      .pie-label-group.highlighted {
+        opacity: 1;
+      }
+      .pie-label-line {
+        transition: stroke-opacity 0.3s ease-in-out;
+      }
+      .pie-label-text {
+        transition: fill-opacity 0.3s ease-in-out;
+      }
+    `;
+      document.head.appendChild(style);
+    }
   };
 
-  // Pie chart colour palette - only green variations
-  const pieColours = [
-    colours.primary,      // #00dfb8 - bright teal
-    colours.secondary,    // #00573B - dark green
-    colours.tertiary,     // #00C29D - medium teal
-    colours.quaternary,   // #007152 - forest green
-    colours.quinary,      // #00A783 - sea green
-    "#10d9c4",           // slightly lighter teal
-    "#004d3d",           // darker forest green
-    "#00b894",           // mint green
-    "#006b5a",           // deep green
-    "#00f5d4",           // very light teal
-    "#003d32",           // very dark green
-    "#009688",           // material teal
-  ];
+  // Call this at the start of your component
+  useEffect(() => {
+    injectLabelStyles();
+  }, []);
 
-  // Prepare pie data - convert the first data key to pie format
-  const getPieData = () => {
+  // Data processing with mobile optimisation
+  const processedData = useMemo(() => {
     if (!data || data.length === 0) return [];
-    
+
     const sampleData = data[0];
-    const numericKeys = Object.keys(sampleData).filter(key => 
-      key !== 'name' && typeof sampleData[key] === 'number'
+    const numericKeys = Object.keys(sampleData).filter(
+      (key) => key !== "name" && typeof sampleData[key] === "number"
     );
-    
+
     if (numericKeys.length === 0) return [];
-    
+
     const dataKey = numericKeys[0];
-    
-    return data.map((item, index) => ({
+    let pieData = data.map((item, index) => ({
       name: item.name,
       value: item[dataKey],
       color: pieColours[index % pieColours.length],
     }));
-  };
 
-  // Mobile optimised data - show only top items, group others
-  const getMobileOptimisedData = () => {
-    const pieData = getPieData();
-    if (pieData.length <= 5) return pieData;
+    const config = getResponsiveConfig(breakpoint, {
+      showInnerRadius,
+      showLabels,
+      showLegend,
+    });
 
-    const sortedData = [...pieData].sort((a, b) => b.value - a.value);
-    const topItems = sortedData.slice(0, 4);
-    const otherItems = sortedData.slice(4);
-    
-    if (otherItems.length > 0) {
-      const otherTotal = otherItems.reduce((sum, item) => sum + item.value, 0);
-      topItems.push({
-        name: "Other",
-        value: otherTotal,
-        color: colours.mutedForeground
-      });
+    // Mobile optimisation: group smaller items
+    if (config.maxItems && pieData.length > config.maxItems) {
+      const sortedData = [...pieData].sort((a, b) => b.value - a.value);
+      const topItems = sortedData.slice(0, config.maxItems - 1);
+      const otherItems = sortedData.slice(config.maxItems - 1);
+
+      if (otherItems.length > 0) {
+        const otherTotal = otherItems.reduce(
+          (sum, item) => sum + item.value,
+          0
+        );
+        topItems.push({
+          name: "Other",
+          value: otherTotal,
+          color: designTokens.colours.mutedForeground,
+        });
+      }
+
+      pieData = topItems;
     }
-    
-    return topItems;
-  };
 
-  // Get responsive configuration - MOBILE DOUBLED, DESKTOP REVERTED
-  const getResponsiveConfig = () => {
-    const baseData = getPieData();
-    const totalValue = baseData.reduce((sum, item) => sum + item.value, 0);
+    return pieData;
+  }, [data, breakpoint, showInnerRadius, showLabels, showLegend]);
 
-    if (isMobile) {
-      return {
-        width: "100%",
-        height: 700, // DOUBLED - was 350
-        margin: { top: 40, right: 60, bottom: 40, left: 60 }, // DOUBLED
-        outerRadius: 170, // DOUBLED - was 85
-        innerRadius: 0,
-        showLabels: false,
-        showLegend: true,
-        legendLayout: "horizontal",
-        data: getMobileOptimisedData(),
-        paddingAngle: 2,
-        totalValue
-      };
-    } else if (isTablet) {
-      return {
-        width: width,
-        height: Math.max(height, 400), // REVERTED - back to original
-        margin: { top: 30, right: 60, bottom: 30, left: 60 }, // REVERTED
-        outerRadius: 120, // REVERTED - back to original
-        innerRadius: showInnerRadius ? 40 : 0, // REVERTED
-        showLabels: showLabels,
-        showLegend: showLegend && !showLabels,
-        legendLayout: "horizontal",
-        data: baseData,
-        paddingAngle: 1,
-        totalValue
-      };
-    } else {
-      return {
-        width: width,
-        height: Math.max(height, 450), // REVERTED - back to original
-        margin: { top: 40, right: 100, bottom: 40, left: 100 }, // REVERTED
-        outerRadius: 150, // REVERTED - back to original
-        innerRadius: showInnerRadius ? 80 : 0, // REVERTED
-        showLabels: showLabels,
-        showLegend: showLegend && !showLabels,
-        legendLayout: "horizontal",
-        data: baseData,
-        paddingAngle: 1,
-        totalValue
-      };
-    }
-  };
+  const totalValue = useMemo(
+    () => processedData.reduce((sum, item) => sum + item.value, 0),
+    [processedData]
+  );
 
-  // Info icon component
-  const InfoIcon = ({ size = 16, color = colours.mutedForeground }) => 
-    React.createElement('svg', {
-      width: size,
-      height: size,
-      viewBox: "0 0 24 24",
-      fill: "none",
-      stroke: color,
-      strokeWidth: "2",
-      strokeLinecap: "round",
-      strokeLinejoin: "round",
-      style: { cursor: 'pointer' }
-    }, [
-      React.createElement('circle', { key: 'circle', cx: "12", cy: "12", r: "10" }),
-      React.createElement('path', { key: 'path1', d: "M12 16v-4" }),
-      React.createElement('path', { key: 'path2', d: "m12 8h.01" })
-    ]);
+  const config = getResponsiveConfig(breakpoint, {
+    showInnerRadius,
+    showLabels,
+    showLegend,
+  });
+  const styles = createStyles(breakpoint);
 
-  // Close icon component
-  const CloseIcon = ({ size = 24, color = colours.mutedForeground }) => 
-    React.createElement('svg', {
-      width: size,
-      height: size,
-      viewBox: "0 0 24 24",
-      fill: "none",
-      stroke: color,
-      strokeWidth: "2",
-      strokeLinecap: "round",
-      strokeLinejoin: "round",
-      style: { cursor: 'pointer' }
-    }, [
-      React.createElement('path', { key: 'path1', d: "M18 6L6 18" }),
-      React.createElement('path', { key: 'path2', d: "M6 6l12 12" })
-    ]);
-
-  // Desktop custom label - MOBILE DOUBLED, DESKTOP REVERTED
-  const renderDesktopCustomLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, value, name, index }) => {
-    // Only show label if percentage is above threshold
-    if (percent < 0.03) return null;
+  // Custom label renderer with CSS-based transitions (much more reliable)
+  const renderCustomLabel = ({
+    cx,
+    cy,
+    midAngle,
+    innerRadius,
+    outerRadius,
+    percent,
+    value,
+    name,
+    index,
+  }) => {
+    if (percent < 0.03) return null; // Hide small labels
 
     const RADIAN = Math.PI / 180;
-    const labelDistance = isMobile ? 70 : isTablet ? 45 : 55; // Mobile doubled, others reverted
+    const labelDistance = breakpoint === "mobile" ? 50 : 35;
     const radius = outerRadius + labelDistance;
     const x = cx + radius * Math.cos(-midAngle * RADIAN);
     const y = cy + radius * Math.sin(-midAngle * RADIAN);
-    
-    // Calculate line points
+
     const lineStart = {
       x: cx + outerRadius * Math.cos(-midAngle * RADIAN),
-      y: cy + outerRadius * Math.sin(-midAngle * RADIAN)
-    };
-    
-    const lineMiddle = {
-      x: cx + (outerRadius + (isMobile ? 40 : 20)) * Math.cos(-midAngle * RADIAN), // Mobile doubled, others reverted
-      y: cy + (outerRadius + (isMobile ? 40 : 20)) * Math.sin(-midAngle * RADIAN)
+      y: cy + outerRadius * Math.sin(-midAngle * RADIAN),
     };
 
     const formatValue = (val) => {
-      if (isMobile || isTablet) {
-        if (val >= 1000000) return `${(val / 1000000).toFixed(1)}M`;
-        if (val >= 1000) return `${(val / 1000).toFixed(1)}K`;
-        return val.toString();
-      }
-      return val.toLocaleString();
+      if (val >= 1000000) return `${(val / 1000000).toFixed(1)}M`;
+      if (val >= 1000) return `${(val / 1000).toFixed(1)}K`;
+      return val.toString();
     };
 
-    const textAnchor = x > cx ? 'start' : 'end';
-    const labelX = textAnchor === 'start' ? x + (isMobile ? 10 : 5) : x - (isMobile ? 10 : 5); // Mobile doubled, others reverted
-    const maxNameLength = isMobile ? 10 : isTablet ? 12 : 15;
-    const displayName = name.length > maxNameLength ? `${name.substring(0, maxNameLength)}...` : name;
+    const textAnchor = x > cx ? "start" : "end";
+    const labelX = textAnchor === "start" ? x + 8 : x - 8;
+    const maxNameLength = breakpoint === "mobile" ? 12 : 15;
+    const displayName =
+      name.length > maxNameLength
+        ? `${name.substring(0, maxNameLength)}...`
+        : name;
 
-    return React.createElement('g', { key: `label-${index}` }, [
-      // Connecting line
-      React.createElement('polyline', {
-        key: 'line',
-        points: `${lineStart.x},${lineStart.y} ${lineMiddle.x},${lineMiddle.y} ${x},${y}`,
-        stroke: colours.mutedForeground,
-        strokeWidth: isMobile ? 2 : 1, // Mobile doubled, others reverted
-        fill: "none",
-        opacity: 0.8
-      }),
-      
-      // Category name with text shadow for better readability
-      React.createElement('text', {
-        key: 'name',
-        x: labelX,
-        y: y - (isMobile ? 12 : isTablet ? 9 : 10), // Mobile doubled, others reverted
-        textAnchor: textAnchor,
-        fill: colours.foreground,
-        fontSize: isMobile ? "1.375rem" : isTablet ? "0.75rem" : "0.875rem", // CHANGED TO REM
-        fontWeight: "600",
-        fontFamily: "Arial, sans-serif",
-        style: {
-          filter: 'drop-shadow(1px 1px 1px rgba(255,255,255,0.8))'
-        }
-      }, displayName),
-      
-      // Value and percentage
-      React.createElement('text', {
-        key: 'value',
-        x: labelX,
-        y: y + (isMobile ? 16 : isTablet ? 9 : 10), // Mobile doubled, others reverted
-        textAnchor: textAnchor,
-        fill: colours.mutedForeground,
-        fontSize: isMobile ? "1.25rem" : isTablet ? "0.6875rem" : "0.75rem", // CHANGED TO REM
-        fontWeight: "500",
-        fontFamily: "Arial, sans-serif",
-        style: {
-          filter: 'drop-shadow(1px 1px 1px rgba(255,255,255,0.8))'
-        }
-      }, `${formatValue(value)} (${(percent * 100).toFixed(1)}%)`)
-    ]);
-  };
+    // Calculate CSS class based on hover state
+    const isTooltipActive = hoveredIndex !== null;
+    const isCurrentSegmentHovered = hoveredIndex === index;
 
-  // Mobile tooltip component - DOUBLED SIZES
-  const MobileTooltip = ({ active, payload }) => {
-    if (active && payload && payload.length) {
-      const data = payload[0];
-      const config = getResponsiveConfig();
-      const percentage = ((data.value / config.totalValue) * 100).toFixed(1);
-      
-      return React.createElement('div', {
-        style: {
-          backgroundColor: colours.background,
-          border: `1px solid ${colours.border}`,
-          borderRadius: "16px", // DOUBLED
-          padding: "24px", // DOUBLED
-          boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-          fontSize: "1.5rem", // CHANGED TO REM
-          minWidth: "320px", // DOUBLED
-          fontFamily: "Arial, sans-serif"
-        }
-      }, [
-        React.createElement('div', {
-          key: 'label',
-          style: {
-            fontWeight: "600",
-            marginBottom: "12px", // DOUBLED
-            color: colours.foreground,
-            fontSize: "1.625rem" // CHANGED TO REM
-          }
-        }, data.name),
-        React.createElement('div', {
-          key: 'content',
-          style: {
-            display: "flex",
-            alignItems: "center",
-            gap: "12px" // DOUBLED
-          }
-        }, [
-          React.createElement('div', {
-            key: 'color',
-            style: {
-              width: "20px", // DOUBLED
-              height: "20px",
-              backgroundColor: data.color,
-              borderRadius: "4px", // DOUBLED
-              flexShrink: 0
-            }
-          }),
-          React.createElement('span', {
-            key: 'text',
-            style: {
-              fontSize: "1.375rem", // CHANGED TO REM
-              color: colours.mutedForeground
-            }
-          }, `${data.value.toLocaleString()} (${percentage}%)`)
-        ])
-      ]);
+    let labelClass = "pie-label-group";
+    if (isTooltipActive) {
+      labelClass += isCurrentSegmentHovered ? " highlighted" : " faded";
     }
-    return null;
+
+    return React.createElement(
+      "g",
+      {
+        key: `label-${index}`,
+        className: labelClass,
+      },
+      [
+        React.createElement("polyline", {
+          key: "line",
+          points: `${lineStart.x},${lineStart.y} ${x},${y}`,
+          stroke: designTokens.colours.mutedForeground,
+          strokeWidth: 1,
+          fill: "none",
+          strokeOpacity: 0.8,
+          className: "pie-label-line",
+        }),
+        React.createElement(
+          "text",
+          {
+            key: "name",
+            x: labelX,
+            y: y - 8,
+            textAnchor: textAnchor,
+            fill: designTokens.colours.foreground,
+            fontSize: designTokens.typography.scale.sm,
+            fontWeight: designTokens.typography.weight.semibold,
+            fontFamily: "Arial, sans-serif",
+            className: "pie-label-text",
+          },
+          displayName
+        ),
+        React.createElement(
+          "text",
+          {
+            key: "value",
+            x: labelX,
+            y: y + 8,
+            textAnchor: textAnchor,
+            fill: designTokens.colours.mutedForeground,
+            fontSize: designTokens.typography.scale.xs,
+            fontWeight: designTokens.typography.weight.medium,
+            fontFamily: "Arial, sans-serif",
+            className: "pie-label-text",
+          },
+          `${formatValue(value)} (${(percent * 100).toFixed(1)}%)`
+        ),
+      ]
+    );
   };
 
-  // Desktop/Tablet tooltip component - REVERTED SIZES
-  const DesktopTooltip = ({ active, payload }) => {
-    if (active && payload && payload.length) {
-      const data = payload[0];
-      return React.createElement('div', {
-        style: {
-          backgroundColor: colours.background,
-          border: `1px solid ${colours.border}`,
-          borderRadius: "10px", // REVERTED
-          padding: isTablet ? "14px" : "16px", // REVERTED
-          boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-          fontSize: isTablet ? "0.875rem" : "0.9375rem", // CHANGED TO REM
-          minWidth: isTablet ? "160px" : "180px", // REVERTED
-          fontFamily: "Arial, sans-serif"
-        }
-      }, [
-        React.createElement('p', {
-          key: 'label',
-          style: {
-            margin: "0 0 8px 0", // REVERTED
-            fontWeight: "600",
-            color: colours.foreground,
-            fontSize: isTablet ? "0.9375rem" : "1rem" // CHANGED TO REM
-          }
-        }, data.name),
-        React.createElement('div', {
-          key: 'content',
-          style: {
-            display: "flex",
-            alignItems: "center",
-            gap: "8px" // REVERTED
-          }
-        }, [
-          React.createElement('div', {
-            key: 'color',
-            style: {
-              width: "12px", // REVERTED
-              height: "12px",
-              backgroundColor: data.color,
-              borderRadius: "3px", // REVERTED
-              flexShrink: 0
-            }
-          }),
-          React.createElement('span', {
-            key: 'text',
-            style: {
-              fontSize: isTablet ? "0.8125rem" : "0.875rem", // CHANGED TO REM
-              color: colours.mutedForeground,
-              display: "flex",
-              alignItems: "center"
-            }
-          }, [
-            "Value: ",
-            React.createElement('span', {
-              key: 'value',
-              style: {
-                fontWeight: "600",
-                color: colours.foreground,
-                marginLeft: "6px" // REVERTED
-              }
-            }, data.value.toLocaleString())
-          ])
-        ])
-      ]);
-    }
-    return null;
-  };
+  // Responsive tooltip component
+  // Responsive tooltip component - petite on mobile, standard on desktop
+const ResponsiveTooltip = ({ active, payload }) => {
+  if (!active || !payload || !payload.length) return null;
 
-  // Responsive chart renderer
-  const renderResponsiveChart = () => {
-    const config = getResponsiveConfig();
-    
-    return React.createElement(ResponsiveContainer, {
-      width: config.width,
-      height: config.height
-    }, React.createElement(RechartsPieChart, {
-      margin: config.margin
-    }, [
-      React.createElement(Pie, {
-        key: 'pie',
-        data: config.data,
-        cx: "50%",
-        cy: "50%",
-        labelLine: false,
-        label: config.showLabels ? renderDesktopCustomLabel : false,
-        outerRadius: config.outerRadius,
-        innerRadius: config.innerRadius,
-        fill: "#8884d8",
-        dataKey: "value",
-        paddingAngle: config.paddingAngle,
-        onMouseEnter: (_, index) => setHoveredIndex(index),
-        onMouseLeave: () => setHoveredIndex(null)
-      }, config.data.map((entry, index) =>
-        React.createElement(Cell, {
-          key: `cell-${index}`,
-          fill: entry.color,
-          stroke: hoveredIndex === index ? colours.foreground : 'none',
-          strokeWidth: hoveredIndex === index ? (isMobile ? 6 : 3) : 0, // Mobile doubled, others reverted
+  const data = payload[0];
+  const percentage = ((data.value / totalValue) * 100).toFixed(1);
+
+  return React.createElement(
+    "div",
+    {
+      style: {
+        backgroundColor: designTokens.colours.background,
+        border: `1px solid ${designTokens.colours.border}`,
+        borderRadius: isMobile ? designTokens.spacing.md : designTokens.spacing.lg,
+        padding: isMobile ? designTokens.spacing.md : designTokens.spacing.xl,
+        boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+        fontSize: isMobile ? designTokens.typography.scale.xs : designTokens.typography.scale.sm,
+        minWidth: isMobile ? "140px" : "180px", // Much narrower on mobile
+        maxWidth: isMobile ? "160px" : "220px", // Controlled max width
+        fontFamily: "Arial, sans-serif",
+      },
+    },
+    [
+      React.createElement(
+        "div",
+        {
+          key: "label",
           style: {
-            filter: hoveredIndex === index ? 'brightness(1.1)' : 'none',
-            cursor: 'pointer',
-            transition: 'all 0.2s ease'
-          }
-        })
-      )),
-      React.createElement(Tooltip, {
-        key: 'tooltip',
-        content: isMobile ? React.createElement(MobileTooltip) : React.createElement(DesktopTooltip)
-      }),
-      config.showLegend && React.createElement(Legend, {
-        key: 'legend',
-        wrapperStyle: {
-          paddingTop: isMobile ? "30px" : isTablet ? "20px" : "25px", // Mobile doubled, others reverted
-          fontSize: isMobile ? "1.375rem" : isTablet ? "0.75rem" : "0.875rem", // CHANGED TO REM
-          color: colours.mutedForeground,
-          fontFamily: "Arial, sans-serif"
+            fontWeight: designTokens.typography.weight.semibold,
+            marginBottom: isMobile ? designTokens.spacing.xs : designTokens.spacing.sm,
+            color: designTokens.colours.foreground,
+            fontSize: isMobile ? designTokens.typography.scale.sm : designTokens.typography.scale.base,
+            lineHeight: "1.3", // Tighter line height for mobile
+            wordBreak: "break-word", // Handle long text gracefully
+          },
         },
-        iconType: isMobile ? "circle" : "rect",
-        layout: config.legendLayout
-      })
-    ]));
-  };
+        data.name
+      ),
+      React.createElement(
+        "div",
+        {
+          key: "content",
+          style: {
+            display: "flex",
+            alignItems: "center",
+            gap: isMobile ? designTokens.spacing.xs : designTokens.spacing.sm,
+          },
+        },
+        [
+          React.createElement("div", {
+            key: "color",
+            style: {
+              width: isMobile ? "8px" : "12px", // Smaller colour indicator on mobile
+              height: isMobile ? "8px" : "12px",
+              backgroundColor: data.color,
+              borderRadius: "2px",
+              flexShrink: 0,
+            },
+          }),
+          React.createElement(
+            "span",
+            {
+              key: "text",
+              style: {
+                fontSize: isMobile ? designTokens.typography.scale.xs : designTokens.typography.scale.sm,
+                color: designTokens.colours.mutedForeground,
+                lineHeight: "1.3",
+              },
+            },
+            `${data.value.toLocaleString()} (${percentage}%)`
+          ),
+        ]
+      ),
+    ]
+  );
+};
 
-  // Notes modal - MOBILE DOUBLED, DESKTOP REVERTED
+  // Icon components
+  const InfoIcon = ({ size = 16 }) =>
+    React.createElement(
+      "svg",
+      {
+        width: size,
+        height: size,
+        viewBox: "0 0 24 24",
+        fill: "none",
+        stroke: designTokens.colours.mutedForeground,
+        strokeWidth: "2",
+        strokeLinecap: "round",
+        strokeLinejoin: "round",
+        style: { cursor: "pointer" },
+      },
+      [
+        React.createElement("circle", {
+          key: "circle",
+          cx: "12",
+          cy: "12",
+          r: "10",
+        }),
+        React.createElement("path", { key: "path1", d: "M12 16v-4" }),
+        React.createElement("path", { key: "path2", d: "m12 8h.01" }),
+      ]
+    );
+
+  const CloseIcon = ({ size = 24 }) =>
+    React.createElement(
+      "svg",
+      {
+        width: size,
+        height: size,
+        viewBox: "0 0 24 24",
+        fill: "none",
+        stroke: designTokens.colours.mutedForeground,
+        strokeWidth: "2",
+        strokeLinecap: "round",
+        strokeLinejoin: "round",
+        style: { cursor: "pointer" },
+      },
+      [
+        React.createElement("path", { key: "path1", d: "M18 6L6 18" }),
+        React.createElement("path", { key: "path2", d: "M6 6l12 12" }),
+      ]
+    );
+
+  // Modal component
   const NotesModal = () => {
     if (!showNotesModal || !notesDescription) return null;
 
-    return React.createElement('div', {
-      style: {
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 9999,
-        padding: isMobile ? '32px' : '32px' // Mobile doubled, desktop reverted
-      },
-      onClick: (e) => {
-        if (e.target === e.currentTarget) {
-          setShowNotesModal(false);
-        }
-      }
-    }, React.createElement('div', {
-      style: {
-        backgroundColor: colours.background,
-        borderRadius: isMobile ? '24px' : '12px', // Mobile doubled, desktop reverted
-        border: `1px solid ${colours.border}`,
-        maxWidth: isMobile ? '100%' : '500px', // Mobile same, desktop reverted
-        width: '100%',
-        maxHeight: '80vh',
-        overflowY: 'auto',
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-        fontFamily: 'Arial, sans-serif'
-      },
-      onClick: (e) => e.stopPropagation()
-    }, [
-      // Modal header
-      React.createElement('div', {
-        key: 'header',
+    return React.createElement(
+      "div",
+      {
         style: {
-          padding: isMobile ? '32px' : '24px', // Mobile doubled, desktop reverted
-          borderBottom: `1px solid ${colours.border}`,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between'
-        }
-      }, [
-        React.createElement('h3', {
-          key: 'title',
-          style: {
-            margin: 0,
-            fontSize: isMobile ? "2rem" : "1.125rem", // CHANGED TO REM
-            fontWeight: '600',
-            color: colours.foreground
-          }
-        }, 'Chart Notes'),
-        React.createElement('button', {
-          key: 'close-btn',
-          onClick: () => setShowNotesModal(false),
-          style: {
-            background: 'none',
-            border: 'none',
-            padding: isMobile ? '8px' : '4px', // Mobile doubled, desktop reverted
-            cursor: 'pointer',
-            borderRadius: isMobile ? '8px' : '4px', // Mobile doubled, desktop reverted
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          },
-          onMouseOver: (e) => {
-            e.target.style.backgroundColor = colours.muted;
-          },
-          onMouseOut: (e) => {
-            e.target.style.backgroundColor = 'transparent';
-          }
-        }, React.createElement(CloseIcon, { size: isMobile ? 40 : 20 })) // Mobile doubled, desktop reverted
-      ]),
-      // Modal content
-      React.createElement('div', {
-        key: 'content',
-        style: {
-          padding: isMobile ? '32px' : '24px' // Mobile doubled, desktop reverted
-        }
-      }, React.createElement('p', {
-        style: {
-          margin: 0,
-          fontSize: isMobile ? "1.75rem" : "1rem", // CHANGED TO REM
-          lineHeight: '1.6',
-          color: colours.foreground,
-          whiteSpace: 'pre-wrap'
-        }
-      }, notesDescription)),
-      // Modal footer
-      React.createElement('div', {
-        key: 'footer',
-        style: {
-          padding: isMobile ? '24px 32px 32px' : '16px 24px 24px', // Mobile doubled, desktop reverted
-          borderTop: `1px solid ${colours.border}`,
-          display: 'flex',
-          justifyContent: 'flex-end'
-        }
-      }, React.createElement('button', {
-        onClick: () => setShowNotesModal(false),
-        style: {
-          padding: isMobile ? '16px 32px' : '8px 16px', // Mobile doubled, desktop reverted
-          fontSize: isMobile ? "1.75rem" : "0.875rem", // CHANGED TO REM
-          backgroundColor: colours.primary,
-          color: 'white',
-          border: 'none',
-          borderRadius: isMobile ? '12px' : '6px', // Mobile doubled, desktop reverted
-          cursor: 'pointer',
-          fontFamily: 'Arial, sans-serif',
-          fontWeight: '500'
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: "rgba(0, 0, 0, 0.5)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          zIndex: 9999,
+          padding: designTokens.spacing["3xl"],
         },
-        onMouseOver: (e) => {
-          e.target.style.backgroundColor = colours.secondary;
+        onClick: (e) => {
+          if (e.target === e.currentTarget) setShowNotesModal(false);
         },
-        onMouseOut: (e) => {
-          e.target.style.backgroundColor = colours.primary;
-        }
-      }, 'Close'))
-    ]));
+      },
+      React.createElement(
+        "div",
+        {
+          style: {
+            backgroundColor: designTokens.colours.background,
+            borderRadius: designTokens.spacing.xl,
+            border: `1px solid ${designTokens.colours.border}`,
+            maxWidth: isMobile ? "100%" : "500px",
+            width: "100%",
+            maxHeight: "80vh",
+            overflowY: "auto",
+            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
+            fontFamily: "Arial, sans-serif",
+          },
+          onClick: (e) => e.stopPropagation(),
+        },
+        [
+          React.createElement(
+            "div",
+            {
+              key: "header",
+              style: {
+                padding: designTokens.spacing["3xl"],
+                borderBottom: `1px solid ${designTokens.colours.border}`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              },
+            },
+            [
+              React.createElement(
+                "h3",
+                {
+                  key: "title",
+                  style: {
+                    margin: 0,
+                    fontSize: designTokens.typography.scale.lg,
+                    fontWeight: designTokens.typography.weight.semibold,
+                    color: designTokens.colours.foreground,
+                  },
+                },
+                "Chart Notes"
+              ),
+              React.createElement(
+                "button",
+                {
+                  key: "close-btn",
+                  onClick: () => setShowNotesModal(false),
+                  style: {
+                    background: "none",
+                    border: "none",
+                    padding: designTokens.spacing.sm,
+                    cursor: "pointer",
+                    borderRadius: designTokens.spacing.sm,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  },
+                },
+                React.createElement(CloseIcon, { size: 20 })
+              ),
+            ]
+          ),
+          React.createElement(
+            "div",
+            {
+              key: "content",
+              style: { padding: designTokens.spacing["3xl"] },
+            },
+            React.createElement(
+              "p",
+              {
+                style: {
+                  margin: 0,
+                  fontSize: designTokens.typography.scale.base,
+                  lineHeight: "1.6",
+                  color: designTokens.colours.foreground,
+                  whiteSpace: "pre-wrap",
+                },
+              },
+              notesDescription
+            )
+          ),
+        ]
+      )
+    );
   };
 
   return React.createElement(React.Fragment, null, [
-    React.createElement('div', {
-      key: `chart-container-${chartKey}`, // Force re-render on breakpoint change
-      style: {
-        backgroundColor: colours.card,
-        border: `1px solid ${colours.border}`,
-        borderRadius: isMobile ? "24px" : "12px", // Mobile doubled, desktop reverted
-        fontFamily: "Arial, sans-serif",
-        overflow: "hidden",
-        width: "100%",
-        boxSizing: "border-box"
+    React.createElement(
+      "div",
+      {
+        key: `chart-container-${chartKey}`,
+        style: styles.container,
+        className: className,
       },
-      className: className
-    }, [
-      // Header - MOBILE DOUBLED, DESKTOP REVERTED
-      React.createElement('div', {
-        key: 'header',
-        style: {
-          padding: isMobile ? "32px 32px 0 32px" : isTablet ? "20px 20px 0 20px" : "24px 24px 0 24px", // Mobile doubled, others reverted
-          display: "flex",
-          alignItems: "flex-start",
-          justifyContent: "space-between",
-          backgroundColor: colours.cardTint,
-          boxSizing: "border-box"
-        }
-      }, [
-        React.createElement('div', {
-          key: 'title-section',
-          style: {
-            flex: 1,
-            minWidth: 0
-          }
-        }, [
-          title && React.createElement('h3', {
-            key: 'title',
-            style: {
-              margin: isMobile ? "0 0 4px 0" : "0 0 2px 0", // Mobile doubled, desktop reverted
-              fontSize: isMobile ? "2rem" : isTablet ? "1.0625rem" : "1.125rem", // CHANGED TO REM
-              fontWeight: "600",
-              color: colours.foreground,
-              lineHeight: "1.25",
-              letterSpacing: "-0.025em"
-            }
-          }, title),
-          React.createElement('p', {
-            key: 'subtitle',
-            style: {
-              margin: "0",
-              fontSize: isMobile ? "1.5rem" : isTablet ? "0.8125rem" : "0.875rem", // CHANGED TO REM
-              color: colours.mutedForeground,
-              fontWeight: "400"
-            }
-          }, isMobile ? "Payment distribution" : "Payment transaction distribution")
-        ]),
-        showLogo && React.createElement('div', {
-          key: 'logo-section',
-          style: {
-            marginLeft: isMobile ? "16px" : "16px", // Mobile doubled, desktop same
-            flexShrink: 0
-          }
-        }, React.createElement('div', {
-          style: {
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center"
-          }
-        }, React.createElement('img', {
-          src: "https://res.cloudinary.com/dmlmugaye/image/upload/v1754492437/PA_Logo_Black_xlb4mj.svg",
-          alt: "The Payments Association",
-          style: {
-            height: isMobile ? "60px" : isTablet ? "40px" : "40px", // Mobile doubled, others reverted
-            width: "auto",
-            maxWidth: "100%"
-          }
-        })))
-      ]),
+      [
+        // Header
+        React.createElement(
+          "div",
+          {
+            key: "header",
+            style: styles.header,
+          },
+          [
+            React.createElement(
+              "div",
+              {
+                key: "title-section",
+                style: { flex: 1, minWidth: 0 },
+              },
+              [
+                title &&
+                  React.createElement(
+                    "h3",
+                    {
+                      key: "title",
+                      style: styles.title,
+                    },
+                    title
+                  ),
+                React.createElement(
+                  "p",
+                  {
+                    key: "subtitle",
+                    style: styles.subtitle,
+                  },
+                  isMobile
+                    ? "Payment distribution"
+                    : "Payment transaction distribution"
+                ),
+              ]
+            ),
+            showLogo &&
+              React.createElement(
+                "div",
+                {
+                  key: "logo-section",
+                  style: { marginLeft: designTokens.spacing.xl, flexShrink: 0 },
+                },
+                React.createElement("img", {
+                  src: "https://res.cloudinary.com/dmlmugaye/image/upload/v1754492437/PA_Logo_Black_xlb4mj.svg",
+                  alt: "The Payments Association",
+                  style: {
+                    height: isMobile ? "48px" : "40px",
+                    width: "auto",
+                    maxWidth: "100%",
+                  },
+                })
+              ),
+          ]
+        ),
 
-      // Chart section - MOBILE DOUBLED, DESKTOP REVERTED
-      React.createElement('div', {
-        key: 'chart',
-        style: {
-          padding: isMobile ? "40px" : isTablet ? "24px" : "32px", // Mobile doubled, others reverted
-          backgroundColor: colours.cardTint,
-          boxSizing: "border-box"
-        }
-      }, renderResponsiveChart()),
+        // Chart section
+        React.createElement(
+          "div",
+          {
+            key: "chart",
+            style: styles.chartSection,
+          },
+          React.createElement(
+            ResponsiveContainer,
+            {
+              width: config.width,
+              height: config.height,
+            },
+            React.createElement(
+              RechartsPieChart,
+              {
+                margin: config.margin,
+              },
+              [
+                React.createElement(
+                  Pie,
+                  {
+                    key: "pie",
+                    data: processedData,
+                    cx: "50%",
+                    cy: "50%",
+                    labelLine: false,
+                    label: config.showLabels ? renderCustomLabel : false,
+                    outerRadius: config.outerRadius,
+                    innerRadius: config.innerRadius,
+                    fill: "#8884d8",
+                    dataKey: "value",
+                    paddingAngle: config.paddingAngle,
+                    onMouseEnter: (_, index) => setHoveredIndex(index),
+                    onMouseLeave: () => setHoveredIndex(null),
+                  },
+                  processedData.map((entry, index) =>
+                    React.createElement(Cell, {
+                      key: `cell-${index}`,
+                      fill: entry.color,
+                    stroke: hoveredIndex === index ? designTokens.colours.mutedForeground : "#ffffff",
 
-      // Footer - MOBILE DOUBLED, DESKTOP REVERTED
-      React.createElement('div', {
-        key: 'footer',
-        style: {
-          padding: isMobile ? "0 32px 32px 32px" : isTablet ? "0 20px 18px 20px" : "0 24px 20px 24px", // Mobile doubled, others reverted
-          borderTop: `1px solid ${colours.border}`,
-          paddingTop: isMobile ? "24px" : isTablet ? "14px" : "16px", // Mobile doubled, others reverted
-          backgroundColor: colours.card,
-          boxSizing: "border-box"
-        }
-      }, React.createElement('div', {
-        style: {
-          display: 'flex',
-          flexDirection: isMobile ? 'column' : 'row',
-          gap: isMobile ? '16px' : '16px', // Mobile doubled, desktop same
-          alignItems: isMobile ? 'flex-start' : 'center',
-          justifyContent: 'space-between'
-        }
-      }, [
-        React.createElement('div', {
-          key: 'source-section',
-          style: {
-            display: 'flex',
-            flexDirection: isMobile ? 'column' : 'row',
-            gap: isMobile ? '8px' : '16px', // Mobile doubled, desktop same
-            alignItems: isMobile ? 'flex-start' : 'center'
-          }
-        }, [
-          sourceUrl ? React.createElement('a', {
-            key: 'source',
-            href: sourceUrl,
-            target: "_blank",
-            rel: "noopener noreferrer",
-            style: {
-              margin: "0",
-              fontSize: isMobile ? "1.25rem" : isTablet ? "0.6875rem" : "0.75rem", // CHANGED TO REM
-              color: colours.mutedForeground,
-              fontWeight: "400",
-              textDecoration: "underline",
-              cursor: "pointer"
+                      strokeWidth: hoveredIndex === index ? 2 : 1,
+                      style: {
+                        filter:
+                          hoveredIndex === index ? "brightness(1.1)" : "none",
+                        cursor: "pointer",
+                        transition: "all 0.2s ease",
+                      },
+                    })
+                  )
+                ),
+                React.createElement(Tooltip, {
+                  key: "tooltip",
+                  content: React.createElement(ResponsiveTooltip),
+                }),
+                config.showLegend &&
+                  React.createElement(Legend, {
+                    key: "legend",
+                    wrapperStyle: {
+                      paddingTop: designTokens.spacing["2xl"],
+                      fontSize: designTokens.typography.scale.sm,
+                      color: designTokens.colours.mutedForeground,
+                      fontFamily: "Arial, sans-serif",
+                    },
+                    iconType: "rect",
+                    layout: config.legendLayout,
+                  }),
+              ]
+            )
+          )
+        ),
+
+        // Footer
+        React.createElement(
+          "div",
+          {
+            key: "footer",
+            style: styles.footer,
+          },
+          React.createElement(
+            "div",
+            {
+              style: {
+                display: "flex",
+                flexDirection: isMobile ? "column" : "row",
+                gap: designTokens.spacing.xl,
+                alignItems: isMobile ? "flex-start" : "center",
+                justifyContent: "space-between",
+              },
             },
-            onMouseOver: (e) => {
-              e.target.style.color = colours.primary;
-            },
-            onMouseOut: (e) => {
-              e.target.style.color = colours.mutedForeground;
-            }
-           }, `Source: ${sourceText}`) : React.createElement('span', {
-      key: 'source',
-           style: {
-             margin: "0",
-             fontSize: isMobile ? "1.25rem" : isTablet ? "0.6875rem" : "0.75rem", // CHANGED TO REM
-             color: colours.mutedForeground,
-             fontWeight: "400"
-           }
-         }, `Source: ${sourceText}`),
-         React.createElement('span', {
-           key: 'chart-info',
-           style: {
-             margin: "0",
-             fontSize: isMobile ? "1.25rem" : isTablet ? "0.6875rem" : "0.75rem", // CHANGED TO REM
-             color: colours.mutedForeground,
-             fontWeight: "400"
-           }
-         }, "Chart: Payments Intelligence")
-       ]),
-       // Notes icon
-       notesDescription && React.createElement('div', {
-         key: 'notes-section',
-         style: {
-           display: 'flex',
-           alignItems: 'center',
-           gap: isMobile ? '12px' : '6px', // Mobile doubled, desktop reverted
-           cursor: 'pointer',
-           padding: isMobile ? '8px' : '4px', // Mobile doubled, desktop reverted
-           borderRadius: isMobile ? '8px' : '4px' // Mobile doubled, desktop reverted
-         },
-         onClick: () => setShowNotesModal(true),
-         onMouseOver: (e) => {
-           e.currentTarget.style.backgroundColor = colours.muted;
-         },
-         onMouseOut: (e) => {
-           e.currentTarget.style.backgroundColor = 'transparent';
-         },
-         title: "View chart notes"
-       }, [
-         React.createElement(InfoIcon, {
-           key: 'icon',
-           size: isMobile ? 28 : 16 // Mobile doubled, desktop reverted
-         }),
-         React.createElement('span', {
-           key: 'text',
-           style: {
-             margin: "0",
-             fontSize: isMobile ? "1.125rem" : isTablet ? "0.625rem" : "0.6875rem", // CHANGED TO REM
-             color: colours.mutedForeground,
-             fontWeight: "400"
-           }
-         }, "Notes")
-       ])
-     ]))
-   ]),
-   React.createElement(NotesModal, { key: 'modal' })
- ]);
+            [
+              React.createElement(
+                "div",
+                {
+                  key: "source-section",
+                  style: {
+                    display: "flex",
+                    flexDirection: isMobile ? "column" : "row",
+                    gap: designTokens.spacing.md,
+                    alignItems: isMobile ? "flex-start" : "center",
+                  },
+                },
+                [
+                  sourceUrl
+                    ? React.createElement(
+                        "a",
+                        {
+                          key: "source",
+                          href: sourceUrl,
+                          target: "_blank",
+                          rel: "noopener noreferrer",
+                          style: {
+                            margin: "0",
+                            fontSize: designTokens.typography.scale.xs,
+                            color: designTokens.colours.mutedForeground,
+                            fontWeight: designTokens.typography.weight.normal,
+                            textDecoration: "underline",
+                            cursor: "pointer",
+                          },
+                        },
+                        `Source: ${sourceText}`
+                      )
+                    : React.createElement(
+                        "span",
+                        {
+                          key: "source",
+                          style: {
+                            margin: "0",
+                            fontSize: designTokens.typography.scale.xs,
+                            color: designTokens.colours.mutedForeground,
+                            fontWeight: designTokens.typography.weight.normal,
+                          },
+                        },
+                        `Source: ${sourceText}`
+                      ),
+                  React.createElement(
+                    "span",
+                    {
+                      key: "chart-info",
+                      style: {
+                        margin: "0",
+                        fontSize: designTokens.typography.scale.xs,
+                        color: designTokens.colours.mutedForeground,
+                        fontWeight: designTokens.typography.weight.normal,
+                      },
+                    },
+                    "Chart: Payments Intelligence"
+                  ),
+                ]
+              ),
+              notesDescription &&
+                React.createElement(
+                  "div",
+                  {
+                    key: "notes-section",
+                    style: {
+                      display: "flex",
+                      alignItems: "center",
+                      gap: designTokens.spacing.sm,
+                      cursor: "pointer",
+                      padding: designTokens.spacing.sm,
+                      borderRadius: designTokens.spacing.sm,
+                    },
+                    onClick: () => setShowNotesModal(true),
+                    title: "View chart notes",
+                  },
+                  [
+                    React.createElement(InfoIcon, { key: "icon", size: 16 }),
+                    React.createElement(
+                      "span",
+                      {
+                        key: "text",
+                        style: {
+                          margin: "0",
+                          fontSize: designTokens.typography.scale.xs,
+                          color: designTokens.colours.mutedForeground,
+                          fontWeight: designTokens.typography.weight.normal,
+                        },
+                      },
+                      "Notes"
+                    ),
+                  ]
+                ),
+            ]
+          )
+        ),
+      ]
+    ),
+    React.createElement(NotesModal, { key: "modal" }),
+  ]);
 };
 
 // Sample data for pie chart
 const samplePaymentsPieData = [
- { name: "Card payments", volume: 145000 },
- { name: "Bank transfers", volume: 89000 },
- { name: "Digital wallets", volume: 67000 },
- { name: "Direct debit", volume: 34000 },
- { name: "Cash", volume: 12000 },
- { name: "Cheques", volume: 3000 }
+  { name: "Card payments", volume: 145000 },
+  { name: "Bank transfers", volume: 89000 },
+  { name: "Digital wallets", volume: 67000 },
+  { name: "Direct debit", volume: 34000 },
+  { name: "Cash", volume: 12000 },
+  { name: "Cheques", volume: 3000 },
 ];
 
-// CRITICAL: Global setup for UMD
-if (typeof window !== 'undefined') {
- console.log('Setting up PaymentsCharts Pie global...');
- 
- // Ensure the global namespace exists
- window.PaymentsCharts = window.PaymentsCharts || {};
- 
- // Add the pie chart render method
- window.PaymentsCharts.renderPieChart = function (containerId, options = {}) {
-   console.log('renderPieChart called with:', containerId, options);
-   
-   const container = document.getElementById(containerId);
-   if (!container) {
-     console.error(`Container with ID ${containerId} not found`);
-     return;
-   }
+// Global setup for UMD (unchanged for compatibility)
+if (typeof window !== "undefined") {
+  console.log("Setting up PaymentsCharts Pie global...");
 
-   try {
-     // Check React availability
-     if (typeof React === 'undefined') {
-       throw new Error('React is not available. Please load React before the chart library.');
-     }
-     
-     if (typeof ReactDOM === 'undefined') {
-       throw new Error('ReactDOM is not available. Please load ReactDOM before the chart library.');
-     }
+  window.PaymentsCharts = window.PaymentsCharts || {};
 
-     const data = options.data || samplePaymentsPieData;
+  window.PaymentsCharts.renderPieChart = function (containerId, options = {}) {
+    console.log("renderPieChart called with:", containerId, options);
 
-     // Try modern React 18+ createRoot first, fallback to legacy render
-     if (ReactDOM.createRoot) {
-       console.log('Using React 18+ createRoot for Pie Chart');
-       const root = ReactDOM.createRoot(container);
-       root.render(
-         React.createElement(PaymentsPieChart, {
-           data: data,
-           width: options.width,
-           height: options.height,
-           title: options.title,
-           showLogo: options.showLogo,
-           className: options.className,
-           sourceText: options.sourceText,
-           sourceUrl: options.sourceUrl,
-           notesDescription: options.notesDescription,
-           showInnerRadius: options.showInnerRadius,
-           showLabels: options.showLabels,
-           showLegend: options.showLegend,
-         })
-       );
-     } else if (ReactDOM.render) {
-       console.log('Using legacy ReactDOM.render for Pie Chart');
-       ReactDOM.render(
-         React.createElement(PaymentsPieChart, {
-           data: data,
-           width: options.width,
-           height: options.height,
-           title: options.title,
-           showLogo: options.showLogo,
-           className: options.className,
-           sourceText: options.sourceText,
-           sourceUrl: options.sourceUrl,
-           notesDescription: options.notesDescription,
-           showInnerRadius: options.showInnerRadius,
-           showLabels: options.showLabels,
-           showLegend: options.showLegend,
-         }),
-         container
-       );
-     } else {
-       throw new Error('No suitable React render method found');
-     }
+    const container = document.getElementById(containerId);
+    if (!container) {
+      console.error(`Container with ID ${containerId} not found`);
+      return;
+    }
 
-     console.log('Pie chart rendered successfully');
-   } catch (error) {
-     console.error('Error rendering pie chart:', error);
-     container.innerHTML = `
-       <div style="
-         color: #ef4444; 
-         background: #fef2f2; 
-         padding: 20px; 
-         border-radius: 8px; 
-         border: 1px solid #fecaca;
-         font-family: ui-sans-serif, system-ui, sans-serif;
-       ">
-         <h4 style="margin: 0 0 8px 0; font-size: 16px;">Pie Chart Loading Error</h4>
-         <p style="margin: 0; font-size: 14px;">${error.message}</p>
-       </div>
-     `;
-   }
- };
+    try {
+      if (typeof React === "undefined") {
+        throw new Error(
+          "React is not available. Please load React before the chart library."
+        );
+      }
 
- // Set this as the main render method if no other chart has claimed it
- if (!window.PaymentsCharts.render) {
-   window.PaymentsCharts.render = window.PaymentsCharts.renderPieChart;
- }
- 
- console.log('PaymentsCharts Pie setup complete. Available methods:', Object.keys(window.PaymentsCharts));
+      if (typeof ReactDOM === "undefined") {
+        throw new Error(
+          "ReactDOM is not available. Please load ReactDOM before the chart library."
+        );
+      }
+
+      const data = options.data || samplePaymentsPieData;
+
+      if (ReactDOM.createRoot) {
+        console.log("Using React 18+ createRoot for Pie Chart");
+        const root = ReactDOM.createRoot(container);
+        root.render(
+          React.createElement(PaymentsPieChart, {
+            data: data,
+            width: options.width,
+            height: options.height,
+            title: options.title,
+            showLogo: options.showLogo,
+            className: options.className,
+            sourceText: options.sourceText,
+            sourceUrl: options.sourceUrl,
+            notesDescription: options.notesDescription,
+            showInnerRadius: options.showInnerRadius,
+            showLabels: options.showLabels,
+            showLegend: options.showLegend,
+          })
+        );
+      } else if (ReactDOM.render) {
+        console.log("Using legacy ReactDOM.render for Pie Chart");
+        ReactDOM.render(
+          React.createElement(PaymentsPieChart, {
+            data: data,
+            width: options.width,
+            height: options.height,
+            title: options.title,
+            showLogo: options.showLogo,
+            className: options.className,
+            sourceText: options.sourceText,
+            sourceUrl: options.sourceUrl,
+            notesDescription: options.notesDescription,
+            showInnerRadius: options.showInnerRadius,
+            showLabels: options.showLabels,
+            showLegend: options.showLegend,
+          }),
+          container
+        );
+      } else {
+        throw new Error("No suitable React render method found");
+      }
+
+      console.log("Pie chart rendered successfully");
+    } catch (error) {
+      console.error("Error rendering pie chart:", error);
+      container.innerHTML = `
+        <div style="
+          color: #ef4444; 
+          background: #fef2f2; 
+          padding: 20px; 
+          border-radius: 8px; 
+          border: 1px solid #fecaca;
+          font-family: ui-sans-serif, system-ui, sans-serif;
+        ">
+          <h4 style="margin: 0 0 8px 0; font-size: 16px;">Pie Chart Loading Error</h4>
+          <p style="margin: 0; font-size: 14px;">${error.message}</p>
+        </div>
+      `;
+    }
+  };
+
+  if (!window.PaymentsCharts.render) {
+    window.PaymentsCharts.render = window.PaymentsCharts.renderPieChart;
+  }
+
+  console.log(
+    "PaymentsCharts Pie setup complete. Available methods:",
+    Object.keys(window.PaymentsCharts)
+  );
 }
 
-// Auto-render functionality for pie charts
-if (typeof document !== 'undefined') {
- document.addEventListener("DOMContentLoaded", function () {
-   console.log('DOM loaded, looking for auto-render pie charts');
-   const chartContainers = document.querySelectorAll("[data-payments-pie-chart]");
-   
-   if (chartContainers.length === 0) {
-     console.log('No auto-render pie chart containers found');
-     return;
-   }
+// Auto-render functionality (unchanged for compatibility)
+if (typeof document !== "undefined") {
+  document.addEventListener("DOMContentLoaded", function () {
+    console.log("DOM loaded, looking for auto-render pie charts");
+    const chartContainers = document.querySelectorAll(
+      "[data-payments-pie-chart]"
+    );
 
-   console.log(`Found ${chartContainers.length} pie chart containers for auto-render`);
-   
-   chartContainers.forEach((container) => {
-     try {
-       const chartData = container.getAttribute("data-chart-data");
-       const chartTitle = container.getAttribute("data-chart-title");
-       const showLogo = container.getAttribute("data-show-logo") !== "false";
-       const sourceText = container.getAttribute("data-source-text");
-       const sourceUrl = container.getAttribute("data-source-url");
-       const notesDescription = container.getAttribute("data-notes-description");
-       const showInnerRadius = container.getAttribute("data-show-inner-radius") === "true";
-       const showLabels = container.getAttribute("data-show-labels") !== "false";
-       const showLegend = container.getAttribute("data-show-legend") !== "false";
+    if (chartContainers.length === 0) {
+      console.log("No auto-render pie chart containers found");
+      return;
+    }
 
-       if (window.PaymentsCharts && window.PaymentsCharts.renderPieChart) {
-         window.PaymentsCharts.renderPieChart(container.id, {
-           data: chartData ? JSON.parse(chartData) : undefined,
-           title: chartTitle,
-           showLogo: showLogo,
-           sourceText: sourceText,
-           sourceUrl: sourceUrl,
-           notesDescription: notesDescription,
-           showInnerRadius: showInnerRadius,
-           showLabels: showLabels,
-           showLegend: showLegend,
-         });
-       }
-     } catch (error) {
-       console.error('Error in auto-render for pie chart container:', container.id, error);
-     }
-   });
- });
+    console.log(
+      `Found ${chartContainers.length} pie chart containers for auto-render`
+    );
+
+    chartContainers.forEach((container) => {
+      try {
+        const chartData = container.getAttribute("data-chart-data");
+        const chartTitle = container.getAttribute("data-chart-title");
+        const showLogo = container.getAttribute("data-show-logo") !== "false";
+        const sourceText = container.getAttribute("data-source-text");
+        const sourceUrl = container.getAttribute("data-source-url");
+        const notesDescription = container.getAttribute(
+          "data-notes-description"
+        );
+        const showInnerRadius =
+          container.getAttribute("data-show-inner-radius") === "true";
+        const showLabels =
+          container.getAttribute("data-show-labels") !== "false";
+        const showLegend =
+          container.getAttribute("data-show-legend") !== "false";
+
+        if (window.PaymentsCharts && window.PaymentsCharts.renderPieChart) {
+          window.PaymentsCharts.renderPieChart(container.id, {
+            data: chartData ? JSON.parse(chartData) : undefined,
+            title: chartTitle,
+            showLogo: showLogo,
+            sourceText: sourceText,
+            sourceUrl: sourceUrl,
+            notesDescription: notesDescription,
+            showInnerRadius: showInnerRadius,
+            showLabels: showLabels,
+            showLegend: showLegend,
+          });
+        }
+      } catch (error) {
+        console.error(
+          "Error in auto-render for pie chart container:",
+          container.id,
+          error
+        );
+      }
+    });
+  });
 }
 
 export default PaymentsPieChart;
