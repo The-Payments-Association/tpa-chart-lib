@@ -2,124 +2,123 @@
 
 <script>
 (function() {
-  // Scripts to load: React, ReactDOM, and the bar chart library
-  const scripts = [
-    'https://unpkg.com/react@18/umd/react.production.min.js',
-    'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js',
-    'https://nimble-starlight-bed049.netlify.app/bar-payments-charts.min.js'
-  ];
-
-  // Load scripts sequentially
-  function loadScript(src, callback) {
-    const script = document.createElement('script');
-    script.src = src;
-    script.onload = callback;
-    document.head.appendChild(script);
-  }
-
-  function loadAllScripts(index = 0) {
-    if (index >= scripts.length) {
-      // All scripts loaded, wait for DOM if still loading
-      if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', renderCharts);
-      } else {
-        renderCharts();
+  function loadScript(src) {
+    return new Promise((resolve, reject) => {
+      if (document.querySelector(`script[src="${src}"]`)) {
+        resolve();
+        return;
       }
-      return;
-    }
-    loadScript(scripts[index], () => loadAllScripts(index + 1));
+      const s = document.createElement('script');
+      s.src = src;
+      s.onload = resolve;
+      s.onerror = reject;
+      document.head.appendChild(s);
+    });
   }
 
-  loadAllScripts();
+  async function loadReactAndCharts() {
+    try {
+      if (!window.React || !window.ReactDOM) {
+        await loadScript('https://unpkg.com/react@18/umd/react.production.min.js');
+        await loadScript('https://unpkg.com/react-dom@18/umd/react-dom.production.min.js');
+      }
+
+      await loadScript('https://nimble-starlight-bed049.netlify.app/bar-payments-charts.min.js');
+
+      renderCharts();
+    } catch (err) {
+      console.error('Failed to load scripts:', err);
+    }
+  }
+
+  function renderCharts() {
+    // =====================
+    // DATA EXAMPLES
+    // =====================
+
+    const singleBarData = [
+      { name: "Q1 2024", volume: 145000 },
+      { name: "Q2 2024", volume: 162000 },
+      { name: "Q3 2024", volume: 158000 },
+      { name: "Q4 2024", volume: 171000 }
+    ];
+
+    const twoBarData = [
+      { name: "Q1 2024", volume: 145000, value: 32060 },
+      { name: "Q2 2024", volume: 162000, value: 42150 },
+      { name: "Q3 2024", volume: 158000, value: 43320 },
+      { name: "Q4 2024", volume: 171000, value: 46840 },
+      { name: "Q1 2025", volume: 189000, value: 51200 },
+      { name: "Q2 2025", volume: 203000, value: 56780 }
+    ];
+
+    const threeBarData = [
+      { name: "Q1 2024", volume: 145000, value: 32060, count: 12500 },
+      { name: "Q2 2024", volume: 162000, value: 42150, count: 15300 },
+      { name: "Q3 2024", volume: 158000, value: 43320, count: 14800 },
+      { name: "Q4 2024", volume: 171000, value: 46840, count: 16200 }
+    ];
+
+    const fiveBarData = [
+      { name: "Q1", volume: 145000, value: 32060, count: 12500, users: 8500, revenue: 125 },
+      { name: "Q2", volume: 162000, value: 42150, count: 15300, users: 9200, revenue: 142 },
+      { name: "Q3", volume: 158000, value: 43320, count: 14800, users: 8900, revenue: 138 },
+      { name: "Q4", volume: 171000, value: 46840, count: 16200, users: 9800, revenue: 156 }
+    ];
+
+    const largeDataset = [
+      { name: "Jan 2024", volume: 145000, value: 32060 },
+      { name: "Feb 2024", volume: 162000, value: 42150 },
+      { name: "Mar 2024", volume: 158000, value: 43320 },
+      { name: "Apr 2024", volume: 171000, value: 46840 },
+      { name: "May 2024", volume: 189000, value: 51200 },
+      { name: "Jun 2024", volume: 203000, value: 56780 },
+      { name: "Jul 2024", volume: 195000, value: 54300 },
+      { name: "Aug 2024", volume: 187000, value: 52100 },
+      { name: "Sep 2024", volume: 201000, value: 58200 },
+      { name: "Oct 2024", volume: 215000, value: 61800 },
+      { name: "Nov 2024", volume: 208000, value: 59400 },
+      { name: "Dec 2024", volume: 225000, value: 65000 }
+    ];
+
+    const customData = [
+      { name: "Your Period 1", volume: 100000, value: 25000 },
+      { name: "Your Period 2", volume: 120000, value: 30000 },
+      { name: "Your Period 3", volume: 115000, value: 28000 },
+      { name: "Your Period 4", volume: 135000, value: 35000 }
+    ];
+
+    // =====================
+    // RENDER CHART
+    // =====================
+    const chartData = singleBarData; // <-- Change this to any dataset: singleBarData, twoBarData, etc.
+
+    if (window.PaymentsCharts && typeof window.PaymentsCharts.render === 'function') {
+      window.PaymentsCharts.render('payments-chart-bar', {
+        data: chartData,
+        title: 'Quarterly Payment Trends',
+        showLogo: true,
+        width: '100%',
+        height: 400,
+        sourceText: 'UK Finance quarterly payment data',
+        sourceUrl: 'https://www.ukfinance.org.uk/data-and-research/payment-statistics',
+        notesDescription: `This chart shows quarterly payment transaction data for the UK market. 
+Data includes transaction volumes and values across different time periods. 
+
+You can switch between example datasets: 
+- singleBarData: single bar per period 
+- twoBarData: stacked bars with two metrics 
+- threeBarData: stacked bars with three metrics 
+- fiveBarData: stacked bars with five metrics 
+- largeDataset: full year dataset for testing 
+- customData: your custom periods
+`
+      });
+    } else {
+      console.error('PaymentsCharts.render is not available yet.');
+    }
+  }
+
+  loadReactAndCharts();
 })();
-
-// ======================================
-// CHART RENDER FUNCTION
-// ======================================
-function renderCharts() {
-  // ======================================
-  // DATA EXAMPLES - Choose one below
-  // ======================================
-
-  // SINGLE BAR CHART
-  const singleBarData = [
-    { name: "Q1 2024", volume: 145000 },
-    { name: "Q2 2024", volume: 162000 },
-    { name: "Q3 2024", volume: 158000 },
-    { name: "Q4 2024", volume: 171000 }
-  ];
-
-  // STACKED BAR CHART - TWO BARS STACKED (Most Common)
-  const twoBarData = [
-    { name: "Q1 2024", volume: 145000, value: 32060 },
-    { name: "Q2 2024", volume: 162000, value: 42150 },
-    { name: "Q3 2024", volume: 158000, value: 43320 },
-    { name: "Q4 2024", volume: 171000, value: 46840 },
-    { name: "Q1 2025", volume: 189000, value: 51200 },
-    { name: "Q2 2025", volume: 203000, value: 56780 }
-  ];
-
-  // STACKED BAR CHART - THREE BARS STACKED
-  const threeBarData = [
-    { name: "Q1 2024", volume: 145000, value: 32060, count: 12500 },
-    { name: "Q2 2024", volume: 162000, value: 42150, count: 15300 },
-    { name: "Q3 2024", volume: 158000, value: 43320, count: 14800 },
-    { name: "Q4 2024", volume: 171000, value: 46840, count: 16200 }
-  ];
-
-  // STACKED BAR CHART - FIVE BARS STACKED
-  const fiveBarData = [
-    { name: "Q1", volume: 145000, value: 32060, count: 12500, users: 8500, revenue: 125 },
-    { name: "Q2", volume: 162000, value: 42150, count: 15300, users: 9200, revenue: 142 },
-    { name: "Q3", volume: 158000, value: 43320, count: 14800, users: 8900, revenue: 138 },
-    { name: "Q4", volume: 171000, value: 46840, count: 16200, users: 9800, revenue: 156 }
-  ];
-
-  // LARGE DATASET EXAMPLE (Tests mobile pagination)
-  const largeDataset = [
-    { name: "Jan 2024", volume: 145000, value: 32060 },
-    { name: "Feb 2024", volume: 162000, value: 42150 },
-    { name: "Mar 2024", volume: 158000, value: 43320 },
-    { name: "Apr 2024", volume: 171000, value: 46840 },
-    { name: "May 2024", volume: 189000, value: 51200 },
-    { name: "Jun 2024", volume: 203000, value: 56780 },
-    { name: "Jul 2024", volume: 195000, value: 54300 },
-    { name: "Aug 2024", volume: 187000, value: 52100 },
-    { name: "Sep 2024", volume: 201000, value: 58200 },
-    { name: "Oct 2024", volume: 215000, value: 61800 },
-    { name: "Nov 2024", volume: 208000, value: 59400 },
-    { name: "Dec 2024", volume: 225000, value: 65000 }
-  ];
-
-  // CUSTOM DATA EXAMPLE - Add your own data here
-  const customData = [
-    { name: "Your Period 1", volume: 100000, value: 25000 },
-    { name: "Your Period 2", volume: 120000, value: 30000 },
-    { name: "Your Period 3", volume: 115000, value: 28000 },
-    { name: "Your Period 4", volume: 135000, value: 35000 }
-  ];
-
-  // ======================================
-  // CHART CONFIGURATION
-  // ======================================
-
-  window.PaymentsCharts.render('payments-chart-bar', {
-
-    // DATA: Choose one from above examples or use customData
-    data: singleBarData, // <-- CHANGE THIS LINE
-
-    // CHART SETTINGS
-    title: 'Quarterly Payment Trends', // <-- CUSTOMIZE YOUR TITLE
-    showLogo: true, // Set to false to hide Payments Association logo
-    width: '100%',
-    height: 400, // Chart height in pixels
-
-    // SOURCE INFORMATION
-    sourceText: 'UK Finance quarterly payment data', // <-- YOUR DATA SOURCE
-    sourceUrl: 'https://www.ukfinance.org.uk/data-and-research/payment-statistics', // <-- LINK TO SOURCE (optional)
-
-    // NOTES (Optional - leave blank or remove for no notes icon)
-    notesDescription: 'This chart shows quarterly payment transaction data for the UK market. Data includes transaction volumes and values across different time periods.', // <-- CHART NOTES (optional)
-  });
-}
 </script>
