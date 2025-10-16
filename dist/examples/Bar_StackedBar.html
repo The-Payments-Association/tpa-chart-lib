@@ -1,13 +1,12 @@
-<div id="payments-chart-quarterly" style="width: 100%; height: 700px; margin: 20px 0;"></div>
-
+<div id="payments-chart-bar" style="width: 100%; height: 700px; margin: 20px 0;"></div>
 <script>
-// Simple library loader - IGNORE THIS SECTION
+  
 (function() {
-  if (window.PaymentsCharts) { renderCharts(); return; }
+  if (window.PaymentsChartsBar) { renderBarChart(); return; }
   
   const scripts = [
     'https://unpkg.com/react@18/umd/react.production.min.js',
-    'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js', 
+    'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js',
     'https://nimble-starlight-bed049.netlify.app/bar-payments-charts.min.js'
   ];
   
@@ -15,7 +14,7 @@
   scripts.forEach(src => {
     const script = document.createElement('script');
     script.src = src;
-    script.onload = () => { if (++loaded === scripts.length) setTimeout(renderCharts, 100); };
+    script.onload = () => { if (++loaded === scripts.length) setTimeout(renderBarChart, 100); };
     document.head.appendChild(script);
   });
 })();
@@ -87,7 +86,7 @@ function renderCharts() {
   // CHART CONFIGURATION
   // ======================================
   
-  window.PaymentsCharts.render('payments-chart-quarterly', {
+  window.PaymentsCharts.render('payments-chart-bar', {
 
     // DATA: Choose one from above examples or use customData
     data: singleBarData, // <-- CHANGE THIS LINE
