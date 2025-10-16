@@ -1120,58 +1120,39 @@ if (typeof window !== "undefined") {
 if (typeof document !== "undefined") {
   document.addEventListener("DOMContentLoaded", function () {
     console.log("DOM loaded, looking for auto-render pie charts");
-    const chartContainers = document.querySelectorAll(
-      "[data-payments-pie-chart]"
-    );
 
-    if (chartContainers.length === 0) {
-      console.log("No auto-render pie chart containers found");
+    const container = document.getElementById("payments-chart-pie");
+    if (!container) {
+      console.log("No auto-render pie chart container found");
       return;
     }
 
-    console.log(
-      `Found ${chartContainers.length} pie chart containers for auto-render`
-    );
+    try {
+      const chartData = container.getAttribute("data-chart-data");
+      const options = {
+        data: chartData ? JSON.parse(chartData) : undefined,
+        title: container.getAttribute("data-chart-title"),
+        showLogo: container.getAttribute("data-show-logo") !== "false",
+        sourceText: container.getAttribute("data-source-text"),
+        sourceUrl: container.getAttribute("data-source-url"),
+        notesDescription: container.getAttribute("data-notes-description"),
+        showInnerRadius: container.getAttribute("data-show-inner-radius") === "true",
+        showLabels: container.getAttribute("data-show-labels") !== "false",
+        showLegend: container.getAttribute("data-show-legend") !== "false",
+      };
 
-    chartContainers.forEach((container) => {
-      try {
-        const chartData = container.getAttribute("data-chart-data");
-        const chartTitle = container.getAttribute("data-chart-title");
-        const showLogo = container.getAttribute("data-show-logo") !== "false";
-        const sourceText = container.getAttribute("data-source-text");
-        const sourceUrl = container.getAttribute("data-source-url");
-        const notesDescription = container.getAttribute(
-          "data-notes-description"
-        );
-        const showInnerRadius =
-          container.getAttribute("data-show-inner-radius") === "true";
-        const showLabels =
-          container.getAttribute("data-show-labels") !== "false";
-        const showLegend =
-          container.getAttribute("data-show-legend") !== "false";
-
-        if (window.PaymentsCharts && window.PaymentsCharts.renderPieChart) {
-          window.PaymentsCharts.renderPieChart(container.id, {
-            data: chartData ? JSON.parse(chartData) : undefined,
-            title: chartTitle,
-            showLogo: showLogo,
-            sourceText: sourceText,
-            sourceUrl: sourceUrl,
-            notesDescription: notesDescription,
-            showInnerRadius: showInnerRadius,
-            showLabels: showLabels,
-            showLegend: showLegend,
-          });
-        }
-      } catch (error) {
-        console.error(
-          "Error in auto-render for pie chart container:",
-          container.id,
-          error
-        );
+      if (window.PaymentsCharts && window.PaymentsCharts.renderPieChart) {
+        window.PaymentsCharts.renderPieChart(container.id, options);
       }
-    });
+    } catch (error) {
+      console.error(
+        "Error in auto-render for pie chart container:",
+        container.id,
+        error
+      );
+    }
   });
 }
+
 
 export default PaymentsPieChart;

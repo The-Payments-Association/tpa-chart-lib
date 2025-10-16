@@ -2,24 +2,32 @@
 
 <script>
 (function() {
-  if (window.PaymentsChartsPie) { renderPieChart(); return; }
-  
+  // If the chart library is already loaded, render immediately
+  if (window.PaymentsCharts && window.PaymentsCharts.renderPieChart) {
+    renderCharts();
+    return;
+  }
+
   const scripts = [
     'https://unpkg.com/react@18/umd/react.production.min.js',
-    'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js', 
+    'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js',
     'https://nimble-starlight-bed049.netlify.app/pie-payments-charts.min.js'
   ];
-  
+
   let loaded = 0;
   scripts.forEach(src => {
     const script = document.createElement('script');
     script.src = src;
-    script.onload = () => { 
-      if (++loaded === scripts.length) setTimeout(renderPieChart, 100); 
+    script.onload = () => {
+      loaded++;
+      if (loaded === scripts.length) {
+        setTimeout(renderCharts, 100);
+      }
     };
     document.head.appendChild(script);
   });
 })();
+
 
 function renderCharts() {
   // ======================================
@@ -78,7 +86,8 @@ function renderCharts() {
   // CHART CONFIGURATION
   // ======================================
   
-window.PaymentsChartsPie.renderPieChart('payments-chart-pie', {
+  if (window.PaymentsCharts && window.PaymentsCharts.renderPieChart) {
+    window.PaymentsCharts.renderPieChart('payments-chart-pie', {
   
     // DATA: Choose one from above examples
     data: paymentMethodsData, // Payment methods distribution
@@ -101,5 +110,6 @@ window.PaymentsChartsPie.renderPieChart('payments-chart-pie', {
     // NOTES (Optional - leave blank or remove for no notes icon)
     notesDescription: 'This pie chart shows the distribution of payment methods used in UK transactions. Data represents transaction volumes across different payment channels.',
   });
+}
 }
 </script>

@@ -2,28 +2,48 @@
 
 <script>
 (function() {
-  if (window.PaymentsChartsLine) { renderLineChart(); return; }
-  
+  // Scripts to load: React, ReactDOM, and the chart library
   const scripts = [
     'https://unpkg.com/react@18/umd/react.production.min.js',
     'https://unpkg.com/react-dom@18/umd/react-dom.production.min.js',
     'https://nimble-starlight-bed049.netlify.app/line-payments-charts.min.js'
   ];
-  
+
   let loaded = 0;
-  scripts.forEach(src => {
+
+  // Load a single script and call callback when done
+  function loadScript(src, callback) {
     const script = document.createElement('script');
     script.src = src;
-    script.onload = () => { if (++loaded === scripts.length) setTimeout(renderLineChart, 100); };
+    script.onload = callback;
     document.head.appendChild(script);
-  });
+  }
+
+  // Load all scripts sequentially
+  function loadAllScripts(index = 0) {
+    if (index >= scripts.length) {
+      // All scripts loaded, wait for DOM if still loading
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', renderCharts);
+      } else {
+        renderCharts();
+      }
+      return;
+    }
+    loadScript(scripts[index], () => loadAllScripts(index + 1));
+  }
+
+  loadAllScripts();
 })();
 
+// ======================================
+// CHART RENDER FUNCTION
+// ======================================
 function renderCharts() {
   // ======================================
   // LINE CHART DATA EXAMPLES - Choose one below
   // ======================================
-  
+
   // SINGLE LINE CHART
   const singleLineData = [
     { name: "Q1 2024", volume: 145000 },
@@ -77,22 +97,22 @@ function renderCharts() {
   // ======================================
   // CHART CONFIGURATION
   // ======================================
-  
-  window.PaymentsCharts.render('payments-chart-line', {
+
+  window.PaymentsCharts.renderLineChart('payments-chart-line', {
 
     // DATA: Choose one from above examples
     data: largeLineDataset, // Two line chart showing volume and value trends
-    
+
     // CHART SETTINGS
     title: 'Quarterly Payment Trends',
     showLogo: true, // Set to false to hide logo
     width: '100%',
     height: 400,
-    
+
     // SOURCE INFORMATION
     sourceText: 'UK Finance quarterly payment data',
     sourceUrl: 'https://www.ukfinance.org.uk/data-and-research/payment-statistics',
-    
+
     // NOTES (Optional - leave blank or remove for no notes icon)
     notesDescription: 'This line chart shows quarterly payment trends over time. Perfect for displaying time-series data and identifying patterns.',
   });
